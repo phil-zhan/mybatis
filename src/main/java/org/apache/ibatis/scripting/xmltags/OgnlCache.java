@@ -24,6 +24,8 @@ import ognl.OgnlException;
 import org.apache.ibatis.builder.BuilderException;
 
 /**
+ * OGNL缓存,根据以上链接，大致是说ognl有性能问题，所以加了一个缓存
+ *
  * Caches OGNL parsed expressions.
  *
  * @author Eduardo Macarron
@@ -42,7 +44,9 @@ public final class OgnlCache {
 
   public static Object getValue(String expression, Object root) {
     try {
+      // 创建OgnlContext对象，OgnlClassResolver替代了OGNL中原有的DefaultClassResolver，主要是使用Resource工具类定位资源
       Map context = Ognl.createDefaultContext(root, MEMBER_ACCESS, CLASS_RESOLVER, null);
+      // 使用OGNL执行expression表达式
       return Ognl.getValue(parseExpression(expression), context, root);
     } catch (OgnlException e) {
       throw new BuilderException("Error evaluating expression '" + expression + "'. Cause: " + e, e);
@@ -50,9 +54,12 @@ public final class OgnlCache {
   }
 
   private static Object parseExpression(String expression) throws OgnlException {
+    // 查找缓存
     Object node = expressionCache.get(expression);
     if (node == null) {
+      // 解析表达式
       node = Ognl.parseExpression(expression);
+      // 将表达式的解析结果添加到缓存中
       expressionCache.put(expression, node);
     }
     return node;

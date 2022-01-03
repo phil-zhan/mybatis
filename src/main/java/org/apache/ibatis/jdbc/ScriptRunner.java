@@ -28,6 +28,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ *
+ * 脚本运行器,可以运行SQL脚本，如建表，插入数据，作为单元测试的前期准备
+ * 这个类其实可以被所有项目的单元测试作为工具所利用
+ *
  * This is an internal testing utility.<br>
  * You are welcome to use this class for your own purposes,<br>
  * but if there is some feature/enhancement you need for your own usage,<br>
@@ -210,6 +214,7 @@ public class ScriptRunner {
 
   private void handleLine(StringBuilder command, String line) throws SQLException {
     String trimmedLine = line.trim();
+    //处理注释
     if (lineIsComment(trimmedLine)) {
       Matcher matcher = DELIMITER_PATTERN.matcher(trimmedLine);
       if (matcher.find()) {
@@ -217,12 +222,14 @@ public class ScriptRunner {
       }
       println(trimmedLine);
     } else if (commandReadyToExecute(trimmedLine)) {
+      //如果有分号，执行
       command.append(line, 0, line.lastIndexOf(delimiter));
       command.append(LINE_SEPARATOR);
       println(command);
       executeStatement(command.toString());
       command.setLength(0);
     } else if (trimmedLine.length() > 0) {
+      // 没有分号，先加入，等后面的分号
       command.append(line);
       command.append(LINE_SEPARATOR);
     }
@@ -238,6 +245,7 @@ public class ScriptRunner {
   }
 
   private void executeStatement(String command) throws SQLException {
+    //就是用最简单的JDBC来执行
     try (Statement statement = connection.createStatement()) {
       statement.setEscapeProcessing(escapeProcessing);
       String sql = command;

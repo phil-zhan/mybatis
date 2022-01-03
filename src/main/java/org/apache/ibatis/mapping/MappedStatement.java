@@ -29,10 +29,13 @@ import org.apache.ibatis.scripting.LanguageDriver;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 映射的语句
+ *
  * @author Clinton Begin
  */
 public final class MappedStatement {
 
+  // 节点中的id属性
   private String resource;
   private Configuration configuration;
   private String id;
@@ -40,6 +43,7 @@ public final class MappedStatement {
   private Integer timeout;
   private StatementType statementType;
   private ResultSetType resultSetType;
+  // SqlSource对象，对应一条SQL语句
   private SqlSource sqlSource;
   private Cache cache;
   private ParameterMap parameterMap;
@@ -47,6 +51,7 @@ public final class MappedStatement {
   private boolean flushCacheRequired;
   private boolean useCache;
   private boolean resultOrdered;
+  // SQL的类型
   private SqlCommandType sqlCommandType;
   private KeyGenerator keyGenerator;
   private String[] keyProperties;
@@ -61,6 +66,7 @@ public final class MappedStatement {
     // constructor disabled
   }
 
+  //静态内部类，建造者模式
   public static class Builder {
     private MappedStatement mappedStatement = new MappedStatement();
 
@@ -302,6 +308,7 @@ public final class MappedStatement {
   }
 
   public BoundSql getBoundSql(Object parameterObject) {
+    //其实就是调用sqlSource.getBoundSql
     BoundSql boundSql = sqlSource.getBoundSql(parameterObject);
     List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
     if (parameterMappings == null || parameterMappings.isEmpty()) {

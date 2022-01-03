@@ -50,10 +50,13 @@ import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.TypeHandler;
 
 /**
+ * 映射构建器助手，建造者模式,继承BaseBuilder
+ *
  * @author Clinton Begin
  */
 public class MapperBuilderAssistant extends BaseBuilder {
 
+  // 每个助手都有1个namespace,resource,cache
   private String currentNamespace;
   private final String resource;
   private Cache currentCache;
@@ -82,6 +85,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     this.currentNamespace = currentNamespace;
   }
 
+  // 为id加上namespace前缀，如selectPerson-->org.a.b.selectPerson
   public String applyCurrentNamespace(String base, boolean isReference) {
     if (base == null) {
       return null;
@@ -104,16 +108,22 @@ public class MapperBuilderAssistant extends BaseBuilder {
   }
 
   public Cache useCacheRef(String namespace) {
+    // 如果namespace为空，则抛出异常
     if (namespace == null) {
       throw new BuilderException("cache-ref element requires a namespace attribute.");
     }
     try {
+      // 标识未成功解析的cache引用
       unresolvedCacheRef = true;
+      // 获取namespace对应的cache对象
       Cache cache = configuration.getCache(namespace);
+      // 如果cache为空，则抛出IncompleteElementException异常
       if (cache == null) {
         throw new IncompleteElementException("No cache for namespace '" + namespace + "' could be found.");
       }
+      // 记录当前命名空间使用的cache
       currentCache = cache;
+      // 标记已成功解析cache引用
       unresolvedCacheRef = false;
       return cache;
     } catch (IllegalArgumentException e) {
@@ -128,6 +138,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
       boolean readWrite,
       boolean blocking,
       Properties props) {
+    // 创建Cache对象，使用了构造者模式，CacheBuilder是建造者的角色，而cache是生成的产品
     Cache cache = new CacheBuilder(currentNamespace)
         .implementation(valueOrDefault(typeClass, PerpetualCache.class))
         .addDecorator(valueOrDefault(evictionClass, LruCache.class))
@@ -137,7 +148,9 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .blocking(blocking)
         .properties(props)
         .build();
+    // 将cache对象添加到Configuration.caches集合中保存，cache的id作为key，cache对象本身作为value
     configuration.addCache(cache);
+    // 记录当前命名空间使用的cache对象
     currentCache = cache;
     return cache;
   }
@@ -173,6 +186,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
         .build();
   }
 
+  // 增加ResultMap
   public ResultMap addResultMap(
       String id,
       Class<?> type,
@@ -180,17 +194,23 @@ public class MapperBuilderAssistant extends BaseBuilder {
       Discriminator discriminator,
       List<ResultMapping> resultMappings,
       Boolean autoMapping) {
+    // ResultMap的完整id是namespace.id的格式
     id = applyCurrentNamespace(id, false);
+    // 获取被继承的resultMap的完整id，也就是父ResultMap对象的完整id
     extend = applyCurrentNamespace(extend, true);
-
+    // 针对extend属性的处理
     if (extend != null) {
       if (!configuration.hasResultMap(extend)) {
         throw new IncompleteElementException("Could not find a parent resultmap with id '" + extend + "'");
       }
+      // 检测configuration.resultMaps集合中是否存在被继承的ResultMap对象，获取需要被继承的ResultMap对象
       ResultMap resultMap = configuration.getResultMap(extend);
+      // 获取父ResultMap对象中记录的ResultMapping集合
       List<ResultMapping> extendedResultMappings = new ArrayList<>(resultMap.getResultMappings());
+      // 删除需要覆盖的ResultMapping集合
       extendedResultMappings.removeAll(resultMappings);
       // Remove parent constructor if this resultMap declares a constructor.
+      // 如果当前resultMap节点中定义了constructor节点，则不需要使用父resultMap中记录的相应的constructor节点，则将其对应的ResultMapping对象删除
       boolean declaresConstructor = false;
       for (ResultMapping resultMapping : resultMappings) {
         if (resultMapping.getFlags().contains(ResultFlag.CONSTRUCTOR)) {
@@ -201,8 +221,10 @@ public class MapperBuilderAssistant extends BaseBuilder {
       if (declaresConstructor) {
         extendedResultMappings.removeIf(resultMapping -> resultMapping.getFlags().contains(ResultFlag.CONSTRUCTOR));
       }
+      // 添加需要被继承下来的ResultMapping对象集合
       resultMappings.addAll(extendedResultMappings);
     }
+    // 创建ResultMap对象，并添加到configuration.resultMaps集合中保存
     ResultMap resultMap = new ResultMap.Builder(configuration, id, type, resultMappings, autoMapping)
         .discriminator(discriminator)
         .build();
@@ -241,6 +263,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     return new Discriminator.Builder(configuration, resultMapping, namespaceDiscriminatorMap).build();
   }
 
+  // 增加映射语句
   public MappedStatement addMappedStatement(
       String id,
       SqlSource sqlSource,
@@ -267,9 +290,12 @@ public class MapperBuilderAssistant extends BaseBuilder {
       throw new IncompleteElementException("Cache-ref not yet resolved");
     }
 
+    // 为id加上namespace前缀
     id = applyCurrentNamespace(id, false);
+    // 是否是select语句
     boolean isSelect = sqlCommandType == SqlCommandType.SELECT;
 
+    // 建造者模式
     MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)
         .resource(resource)
         .fetchSize(fetchSize)
@@ -423,14 +449,19 @@ public class MapperBuilderAssistant extends BaseBuilder {
       String resultSet,
       String foreignColumn,
       boolean lazy) {
+    // 解析resultType节点指定的property属性类型
     Class<?> javaTypeClass = resolveResultJavaType(resultType, property, javaType);
+    // 获取typeHandler指定的TypeHandler对象，其底层依赖于typeHandlerRegistry
     TypeHandler<?> typeHandlerInstance = resolveTypeHandler(javaTypeClass, typeHandler);
+    // 解析column属性值
     List<ResultMapping> composites;
     if ((nestedSelect == null || nestedSelect.isEmpty()) && (foreignColumn == null || foreignColumn.isEmpty())) {
       composites = Collections.emptyList();
     } else {
+      // 解析复合的列名,一般用不到，返回的是空
       composites = parseCompositeColumnName(column);
     }
+    // 创建ResultMapping.builder对象，创建ResultMapping对象，并设置其字段
     return new ResultMapping.Builder(configuration, property, column, javaTypeClass)
         .jdbcType(jdbcType)
         .nestedQueryId(applyCurrentNamespace(nestedSelect, true))
@@ -483,6 +514,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
 
   /**
    * Gets the language driver.
+   * 取得语言驱动
    *
    * @param langClass
    *          the lang class

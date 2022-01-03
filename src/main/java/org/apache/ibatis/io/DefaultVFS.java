@@ -36,6 +36,8 @@ import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 
 /**
+ * 默认的VFS，提供了读取jar包的方法
+ *
  * A default implementation of {@link VFS} that works for most application servers.
  *
  * @author Ben Gunter
@@ -59,15 +61,18 @@ public class DefaultVFS extends VFS {
 
       // First, try to find the URL of a JAR file containing the requested resource. If a JAR
       // file is found, then we'll list child resources by reading the JAR.
+      // 如果url指定的资源在一个jar包中，则获取该jar包对应的url，否则返回null
       URL jarUrl = findJarForResource(url);
       if (jarUrl != null) {
         is = jarUrl.openStream();
         if (log.isDebugEnabled()) {
           log.debug("Listing " + url);
         }
+        // 遍历jar中的资源，并返回以path开头的资源列表
         resources = listResources(new JarInputStream(is), path);
       } else {
         List<String> children = new ArrayList<>();
+        // 遍历url指向的目录，将其下资源名称记录到children集合中
         try {
           if (isJar(url)) {
             // Some versions of JBoss VFS might give a JAR stream even if the resource
@@ -146,7 +151,7 @@ public class DefaultVFS extends VFS {
           prefix = prefix + "/";
         }
 
-        // Iterate over immediate children, adding files and recurring into directories
+        // Iterate over immediate children, adding files and recursing into directories
         for (String child : children) {
           String resourcePath = path + "/" + child;
           resources.add(resourcePath);
@@ -186,11 +191,13 @@ public class DefaultVFS extends VFS {
     }
 
     // Iterate over the entries and collect those that begin with the requested path
+    // 如果path不是以“/”开始和结束，则在其开始和结束位置添加"/",遍历整个jar包，将以path开头的资源记录到resources集合中并返回
     List<String> resources = new ArrayList<>();
     for (JarEntry entry; (entry = jar.getNextJarEntry()) != null;) {
       if (!entry.isDirectory()) {
         // Add leading slash if it's missing
         StringBuilder name = new StringBuilder(entry.getName());
+        // 如果name不是以“/”，则为其添加“/”
         if (name.charAt(0) != '/') {
           name.insert(0, '/');
         }
@@ -271,7 +278,7 @@ public class DefaultVFS extends VFS {
           try {
             file = new File(URLEncoder.encode(jarUrl.toString(), "UTF-8"));
           } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Unsupported encoding?  UTF-8?  That's impossible.");
+            throw new RuntimeException("Unsupported encoding?  UTF-8?  That's unpossible.");
           }
         }
 

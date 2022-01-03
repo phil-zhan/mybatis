@@ -18,6 +18,8 @@ package org.apache.ibatis.scripting;
 import org.apache.ibatis.exceptions.PersistenceException;
 
 /**
+ * 脚本异常
+ *
  * @author Frank D. Martinez [mnesarco]
  */
 public class ScriptingException extends PersistenceException {

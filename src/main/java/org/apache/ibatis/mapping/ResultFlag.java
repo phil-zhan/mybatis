@@ -16,6 +16,8 @@
 package org.apache.ibatis.mapping;
 
 /**
+ * 结果标志
+ *
  * @author Clinton Begin
  */
 public enum ResultFlag {

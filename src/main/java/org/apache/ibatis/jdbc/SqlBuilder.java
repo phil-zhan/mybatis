@@ -16,6 +16,9 @@
 package org.apache.ibatis.jdbc;
 
 /**
+ * SQL建造者,已废弃
+ * 可以看到仅仅是包装了一层，转而去调用SQL的方法
+ *
  * @deprecated Use the {@link SQL} Class
  *
  * @author Jeff Butler

@@ -96,12 +96,16 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 配置项
+ *
  * @author Clinton Begin
  */
 public class Configuration {
 
+  //环境
   protected Environment environment;
 
+  //---------以下都是<settings>节点-------
   protected boolean safeRowBoundsEnabled;
   protected boolean safeResultHandlerEnabled = true;
   protected boolean mapUnderscoreToCamelCase;
@@ -109,12 +113,12 @@ public class Configuration {
   protected boolean multipleResultSetsEnabled = true;
   protected boolean useGeneratedKeys;
   protected boolean useColumnLabel = true;
+  //默认启用缓存
   protected boolean cacheEnabled = true;
   protected boolean callSettersOnNulls;
   protected boolean useActualParamName = true;
   protected boolean returnInstanceForEmptyRow;
   protected boolean shrinkWhitespacesInSql;
-  protected boolean nullableOnForEach;
 
   protected String logPrefix;
   protected Class<? extends Log> logImpl;
@@ -126,15 +130,18 @@ public class Configuration {
   protected Integer defaultStatementTimeout;
   protected Integer defaultFetchSize;
   protected ResultSetType defaultResultSetType;
+  //默认为简单执行器
   protected ExecutorType defaultExecutorType = ExecutorType.SIMPLE;
   protected AutoMappingBehavior autoMappingBehavior = AutoMappingBehavior.PARTIAL;
   protected AutoMappingUnknownColumnBehavior autoMappingUnknownColumnBehavior = AutoMappingUnknownColumnBehavior.NONE;
-
+  //---------以上都是<settings>节点-------
   protected Properties variables = new Properties();
+  //对象工厂和对象包装器工厂
   protected ReflectorFactory reflectorFactory = new DefaultReflectorFactory();
   protected ObjectFactory objectFactory = new DefaultObjectFactory();
   protected ObjectWrapperFactory objectWrapperFactory = new DefaultObjectWrapperFactory();
 
+  //默认禁用延迟加载
   protected boolean lazyLoadingEnabled = false;
   protected ProxyFactory proxyFactory = new JavassistProxyFactory(); // #224 Using internal Javassist instead of OGNL
 
@@ -149,14 +156,19 @@ public class Configuration {
 
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
   protected final InterceptorChain interceptorChain = new InterceptorChain();
+  //类型处理器注册机
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry(this);
+  //类型别名注册机
   protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
   protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();
 
+  //映射的语句,存在Map里
   protected final Map<String, MappedStatement> mappedStatements = new StrictMap<MappedStatement>("Mapped Statements collection")
       .conflictMessageProducer((savedValue, targetValue) ->
           ". please check " + savedValue.getResource() + " and " + targetValue.getResource());
+  //缓存,存在Map里
   protected final Map<String, Cache> caches = new StrictMap<>("Caches collection");
+  //结果映射,存在Map里
   protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");
   protected final Map<String, ParameterMap> parameterMaps = new StrictMap<>("Parameter Maps collection");
   protected final Map<String, KeyGenerator> keyGenerators = new StrictMap<>("Key Generators collection");
@@ -164,6 +176,7 @@ public class Configuration {
   protected final Set<String> loadedResources = new HashSet<>();
   protected final Map<String, XNode> sqlFragments = new StrictMap<>("XML fragments parsed from previous mappers");
 
+  //不完整的SQL语句
   protected final Collection<XMLStatementBuilder> incompleteStatements = new LinkedList<>();
   protected final Collection<CacheRefResolver> incompleteCacheRefs = new LinkedList<>();
   protected final Collection<ResultMapResolver> incompleteResultMaps = new LinkedList<>();
@@ -296,28 +309,6 @@ public class Configuration {
 
   public void setShrinkWhitespacesInSql(boolean shrinkWhitespacesInSql) {
     this.shrinkWhitespacesInSql = shrinkWhitespacesInSql;
-  }
-
-  /**
-   * Sets the default value of 'nullable' attribute on 'foreach' tag.
-   *
-   * @param nullableOnForEach If nullable, set to {@code true}
-   * @since 3.5.9
-   */
-  public void setNullableOnForEach(boolean nullableOnForEach) {
-    this.nullableOnForEach = nullableOnForEach;
-  }
-
-  /**
-   * Returns the default value of 'nullable' attribute on 'foreach' tag.
-   *
-   * <p>Default is {@code false}.
-   *
-   * @return If nullable, set to {@code true}
-   * @since 3.5.9
-   */
-  public boolean isNullableOnForEach() {
-    return nullableOnForEach;
   }
 
   public String getDatabaseId() {
@@ -660,25 +651,34 @@ public class Configuration {
     return getDefaultScriptingLanguageInstance();
   }
 
+  //创建元对象
   public MetaObject newMetaObject(Object object) {
     return MetaObject.forObject(object, objectFactory, objectWrapperFactory, reflectorFactory);
   }
 
+  //创建参数处理器
   public ParameterHandler newParameterHandler(MappedStatement mappedStatement, Object parameterObject, BoundSql boundSql) {
+    //创建ParameterHandler
     ParameterHandler parameterHandler = mappedStatement.getLang().createParameterHandler(mappedStatement, parameterObject, boundSql);
+    //插件在这里插入
     parameterHandler = (ParameterHandler) interceptorChain.pluginAll(parameterHandler);
     return parameterHandler;
   }
 
+  //创建结果集处理器
   public ResultSetHandler newResultSetHandler(Executor executor, MappedStatement mappedStatement, RowBounds rowBounds, ParameterHandler parameterHandler,
       ResultHandler resultHandler, BoundSql boundSql) {
+    //创建DefaultResultSetHandler(稍老一点的版本3.1是创建NestedResultSetHandler或者FastResultSetHandler)
     ResultSetHandler resultSetHandler = new DefaultResultSetHandler(executor, mappedStatement, parameterHandler, resultHandler, boundSql, rowBounds);
     resultSetHandler = (ResultSetHandler) interceptorChain.pluginAll(resultSetHandler);
     return resultSetHandler;
   }
 
+  //创建语句处理器
   public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+    //创建路由选择语句处理器
     StatementHandler statementHandler = new RoutingStatementHandler(executor, mappedStatement, parameterObject, rowBounds, resultHandler, boundSql);
+    //插件在这里插入
     statementHandler = (StatementHandler) interceptorChain.pluginAll(statementHandler);
     return statementHandler;
   }
@@ -687,10 +687,12 @@ public class Configuration {
     return newExecutor(transaction, defaultExecutorType);
   }
 
+  //产生执行器
   public Executor newExecutor(Transaction transaction, ExecutorType executorType) {
-    executorType = executorType == null ? defaultExecutorType : executorType;
+    executorType = executorType == null ? defaultExecutorType : executorType; // ?
     executorType = executorType == null ? ExecutorType.SIMPLE : executorType;
     Executor executor;
+    // 根据参数，选择合适的Executor实现
     if (ExecutorType.BATCH == executorType) {
       executor = new BatchExecutor(this, transaction);
     } else if (ExecutorType.REUSE == executorType) {
@@ -698,9 +700,11 @@ public class Configuration {
     } else {
       executor = new SimpleExecutor(this, transaction);
     }
+    // 根据配置决定是否开启二级缓存的功能
     if (cacheEnabled) {
       executor = new CachingExecutor(executor);
     }
+    // 此处调用插件,通过插件可以改变Executor行为
     executor = (Executor) interceptorChain.pluginAll(executor);
     return executor;
   }
@@ -833,11 +837,13 @@ public class Configuration {
     return incompleteMethods;
   }
 
+  //由DefaultSqlSession.selectList调用过来
   public MappedStatement getMappedStatement(String id) {
     return this.getMappedStatement(id, true);
   }
 
   public MappedStatement getMappedStatement(String id, boolean validateIncompleteStatements) {
+    //先构建所有语句，再返回语句
     if (validateIncompleteStatements) {
       buildAllStatements();
     }
@@ -860,6 +866,7 @@ public class Configuration {
     mapperRegistry.addMappers(packageName);
   }
 
+  //将包下所有类加入到mapper
   public <T> void addMapper(Class<T> type) {
     mapperRegistry.addMapper(type);
   }
@@ -990,6 +997,7 @@ public class Configuration {
     }
   }
 
+  //静态内部类,严格的Map，不允许多次覆盖key所对应的value
   protected static class StrictMap<V> extends HashMap<String, V> {
 
     private static final long serialVersionUID = -4950446264854982944L;
@@ -1032,27 +1040,34 @@ public class Configuration {
     @Override
     @SuppressWarnings("unchecked")
     public V put(String key, V value) {
+      // 如果已经包含了该key，则直接返回异常
       if (containsKey(key)) {
         throw new IllegalArgumentException(name + " already contains value for " + key
             + (conflictMessageProducer == null ? "" : conflictMessageProducer.apply(super.get(key), value)));
       }
       if (key.contains(".")) {
+        // 按照"."将key切分成数组，并将数组的最后一项作为shortKey
         final String shortKey = getShortName(key);
         if (super.get(shortKey) == null) {
+          // 如果不包含指定shortKey,则添加该键值对
           super.put(shortKey, value);
         } else {
+          // 如果该shortKey已经存在，则将value修改成Ambiguity对象
           super.put(shortKey, (V) new Ambiguity(shortKey));
         }
       }
+      // 如果不包含该key，则添加该键值对
       return super.put(key, value);
     }
 
     @Override
     public V get(Object key) {
       V value = super.get(key);
+      // 如果该key没有对应的value，则报错
       if (value == null) {
         throw new IllegalArgumentException(name + " does not contain value for " + key);
       }
+      // 如果value是Ambiguity类型，则报错
       if (value instanceof Ambiguity) {
         throw new IllegalArgumentException(((Ambiguity) value).getSubject() + " is ambiguous in " + name
             + " (try using the full name including the namespace, or rename one of the entries)");
@@ -1072,6 +1087,7 @@ public class Configuration {
       }
     }
 
+    //取得短名称，也就是取得最后那个句号的后面那部分
     private String getShortName(String key) {
       final String[] keyParts = key.split("\\.");
       return keyParts[keyParts.length - 1];

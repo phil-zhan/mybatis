@@ -18,10 +18,14 @@ package org.apache.ibatis.scripting.xmltags;
 import java.util.List;
 
 /**
+ * choose SQL节点
+ *
  * @author Clinton Begin
  */
 public class ChooseSqlNode implements SqlNode {
+  // otherwise节点对应的SqlNode
   private final SqlNode defaultSqlNode;
+  // when节点对应的IfSqlNode集合
   private final List<SqlNode> ifSqlNodes;
 
   public ChooseSqlNode(List<SqlNode> ifSqlNodes, SqlNode defaultSqlNode) {
@@ -31,15 +35,18 @@ public class ChooseSqlNode implements SqlNode {
 
   @Override
   public boolean apply(DynamicContext context) {
+    // 遍历ifSqlNode集合并调用其中SqlNode对象的apply方法
     for (SqlNode sqlNode : ifSqlNodes) {
       if (sqlNode.apply(context)) {
         return true;
       }
     }
+    // 调用defaultSqlNode.apply方法
     if (defaultSqlNode != null) {
       defaultSqlNode.apply(context);
       return true;
     }
+    // 如果连otherwise都没有，返回false
     return false;
   }
 }

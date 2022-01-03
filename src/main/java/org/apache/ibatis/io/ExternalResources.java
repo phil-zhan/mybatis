@@ -27,6 +27,8 @@ import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 
 /**
+ * 类似于commons-io里的一些util方法,不过实际上没有任何地方用到了这个类
+ *
  * @author Clinton Begin
  */
 @Deprecated

@@ -19,12 +19,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
+ * 调用
+ *
  * @author Clinton Begin
  */
 public class Invocation {
 
+  //调用的对象
   private final Object target;
+  //调用的方法
   private final Method method;
+  //参数
   private final Object[] args;
 
   public Invocation(Object target, Method method, Object[] args) {

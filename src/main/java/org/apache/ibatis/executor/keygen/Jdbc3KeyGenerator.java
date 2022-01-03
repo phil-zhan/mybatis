@@ -44,6 +44,8 @@ import org.apache.ibatis.type.TypeHandlerRegistry;
 import org.apache.ibatis.util.MapUtil;
 
 /**
+ * JDBC3键值生成器,核心是使用JDBC3的Statement.getGeneratedKeys
+ *
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
@@ -68,17 +70,23 @@ public class Jdbc3KeyGenerator implements KeyGenerator {
 
   @Override
   public void processAfter(Executor executor, MappedStatement ms, Statement stmt, Object parameter) {
+    // 将用户传入的实参parameter封装成集合类型，然后传入processBatch方法中处理
     processBatch(ms, stmt, parameter);
   }
 
+  // 批处理
   public void processBatch(MappedStatement ms, Statement stmt, Object parameter) {
+    // 获取keyProperties属性指定的属性名称，它表示主键对应的属性名称
     final String[] keyProperties = ms.getKeyProperties();
     if (keyProperties == null || keyProperties.length == 0) {
       return;
     }
+    // 核心是使用JDBC3的Statement.getGeneratedKeys
     try (ResultSet rs = stmt.getGeneratedKeys()) {
+      // 获取ResultSet的元数据信息
       final ResultSetMetaData rsmd = rs.getMetaData();
       final Configuration configuration = ms.getConfiguration();
+      // 检测数据库生成的主键的列数与keyProperties属性指定的列数是否匹配
       if (rsmd.getColumnCount() < keyProperties.length) {
         // Error?
       } else {

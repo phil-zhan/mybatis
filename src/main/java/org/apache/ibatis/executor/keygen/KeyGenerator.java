@@ -21,12 +21,16 @@ import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.MappedStatement;
 
 /**
+ * 键值生成器
+ *
  * @author Clinton Begin
  */
 public interface KeyGenerator {
 
+  // 在执行insert之前执行，设置属性order=before
   void processBefore(Executor executor, MappedStatement ms, Statement stmt, Object parameter);
 
+  // 在执行insert之后执行，设置属性order=after
   void processAfter(Executor executor, MappedStatement ms, Statement stmt, Object parameter);
 
 }

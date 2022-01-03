@@ -56,37 +56,49 @@ public class ParamNameResolver {
 
   public ParamNameResolver(Configuration config, Method method) {
     this.useActualParamName = config.isUseActualParamName();
+    // 获取参数列表中每个参数的类型
     final Class<?>[] paramTypes = method.getParameterTypes();
+    // 获取参数列表上的注解
     final Annotation[][] paramAnnotations = method.getParameterAnnotations();
+    // 该集合用于记录参数索引与参数名称的对应关系
     final SortedMap<Integer, String> map = new TreeMap<>();
     int paramCount = paramAnnotations.length;
     // get names from @Param annotations
+    // 遍历方法所有参数
     for (int paramIndex = 0; paramIndex < paramCount; paramIndex++) {
       if (isSpecialParameter(paramTypes[paramIndex])) {
         // skip special parameters
+        // 如果参数是RowBounds类型或ResultHandler类型，则跳过对该参数的分析
         continue;
       }
       String name = null;
+      // 遍历该参数对应的注解集合
       for (Annotation annotation : paramAnnotations[paramIndex]) {
         if (annotation instanceof Param) {
+          // @Param注解出现过一次，就将hasParamAnnotation初始化为true
           hasParamAnnotation = true;
+          // 获取@Param注解指定的参数名称
           name = ((Param) annotation).value();
           break;
         }
       }
       if (name == null) {
         // @Param was not specified.
+        // 该参数没有对应的@Param注解，则根据配置决定是否使用参数实际名称作为其名称
         if (useActualParamName) {
           name = getActualParamName(method, paramIndex);
         }
         if (name == null) {
           // use the parameter index as the name ("0", "1", ...)
           // gcode issue #71
+          // 使用参数的索引作为其名称
           name = String.valueOf(map.size());
         }
       }
+      // 记录到map中保存
       map.put(paramIndex, name);
     }
+    // 初始化name集合
     names = Collections.unmodifiableSortedMap(map);
   }
 
@@ -94,6 +106,7 @@ public class ParamNameResolver {
     return ParamNameUtil.getParamNames(method).get(paramIndex);
   }
 
+  // 过滤RowBounds和ResultHandler两种类型的参数
   private static boolean isSpecialParameter(Class<?> clazz) {
     return RowBounds.class.isAssignableFrom(clazz) || ResultHandler.class.isAssignableFrom(clazz);
   }
@@ -121,20 +134,33 @@ public class ParamNameResolver {
    */
   public Object getNamedParams(Object[] args) {
     final int paramCount = names.size();
+    // 五参数，返回null
     if (args == null || paramCount == 0) {
+      // 如果没参数
       return null;
+      // 未使用@Param且只有一个参数
     } else if (!hasParamAnnotation && paramCount == 1) {
+      // 如果只有一个参数
       Object value = args[names.firstKey()];
       return wrapToMapIfCollection(value, useActualParamName ? names.get(0) : null);
+      // 处理使用@Param注解指定了参数名称或者多个参数的情况
     } else {
+      // param这个map记录了参数名称与实参之间的对应关系，ParamMap继承了HashMap，如果向paramMap中添加已经存在的key，会报错，
       final Map<String, Object> param = new ParamMap<>();
       int i = 0;
       for (Map.Entry<Integer, String> entry : names.entrySet()) {
+        // 将参数名称与实参对应关系记录到param中
         param.put(entry.getValue(), args[entry.getKey()]);
         // add generic param names (param1, param2, ...)
+        // 为参数创建param+索引格式的默认参数名称，并添加到param集合中
         final String genericParamName = GENERIC_NAME_PREFIX + (i + 1);
         // ensure not to overwrite parameter named with @Param
+        // 如果@param注解指定的参数名称就是param+索引格式的，则不需要添加
         if (!names.containsValue(genericParamName)) {
+          // 再加一个#{param1},#{param2}...参数
+          //你可以传递多个参数给一个映射器方法。如果你这样做了,
+          //默认情况下它们将会以它们在参数列表中的位置来命名,比如:#{param1},#{param2}等。
+          //如果你想改变参数的名称(只在多参数情况下) ,那么你可以在参数上使用@Param(“paramName”)注解。
           param.put(genericParamName, args[entry.getKey()]);
         }
         i++;
@@ -154,19 +180,23 @@ public class ParamNameResolver {
    */
   public static Object wrapToMapIfCollection(Object object, String actualParamName) {
     if (object instanceof Collection) {
+      //参数若是Collection型，做collection标记
       ParamMap<Object> map = new ParamMap<>();
       map.put("collection", object);
       if (object instanceof List) {
+        //参数若是List型，做list标记
         map.put("list", object);
       }
       Optional.ofNullable(actualParamName).ifPresent(name -> map.put(name, object));
       return map;
     } else if (object != null && object.getClass().isArray()) {
+      //参数若是数组型，，做array标记
       ParamMap<Object> map = new ParamMap<>();
       map.put("array", object);
       Optional.ofNullable(actualParamName).ifPresent(name -> map.put(name, object));
       return map;
     }
+    //参数若不是集合型，直接返回原来值
     return object;
   }
 

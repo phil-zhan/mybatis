@@ -33,6 +33,9 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * SQL运行器,可以运行SQL，如select，作为单元测试的正式测试
+ * 这个类其实可以被所有项目的单元测试作为工具所利用
+ *
  * @author Clinton Begin
  */
 public class SqlRunner {
@@ -185,6 +188,7 @@ public class SqlRunner {
     }
   }
 
+  //设置参数
   private void setParameters(PreparedStatement ps, Object... args) throws SQLException {
     for (int i = 0, n = args.length; i < n; i++) {
       if (args[i] == null) {
@@ -192,6 +196,7 @@ public class SqlRunner {
       } else if (args[i] instanceof Null) {
         ((Null) args[i]).getTypeHandler().setParameter(ps, i + 1, null, ((Null) args[i]).getJdbcType());
       } else {
+        // 巧妙的利用TypeHandler来设置参数
         TypeHandler typeHandler = typeHandlerRegistry.getTypeHandler(args[i].getClass());
         if (typeHandler == null) {
           throw new SQLException("SqlRunner could not find a TypeHandler instance for " + args[i].getClass());
@@ -202,11 +207,13 @@ public class SqlRunner {
     }
   }
 
+  // 取得结果
   private List<Map<String, Object>> getResults(ResultSet rs) throws SQLException {
     List<Map<String, Object>> list = new ArrayList<>();
     List<String> columns = new ArrayList<>();
     List<TypeHandler<?>> typeHandlers = new ArrayList<>();
     ResultSetMetaData rsmd = rs.getMetaData();
+    // 先计算要哪些列，已经列的类型（TypeHandler）
     for (int i = 0, n = rsmd.getColumnCount(); i < n; i++) {
       columns.add(rsmd.getColumnLabel(i + 1));
       try {
@@ -225,6 +232,7 @@ public class SqlRunner {
       for (int i = 0, n = columns.size(); i < n; i++) {
         String name = columns.get(i);
         TypeHandler<?> handler = typeHandlers.get(i);
+        // 巧妙的利用TypeHandler来取得结果
         row.put(name.toUpperCase(Locale.ENGLISH), handler.getResult(rs, name));
       }
       list.add(row);

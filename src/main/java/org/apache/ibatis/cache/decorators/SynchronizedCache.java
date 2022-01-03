@@ -18,6 +18,13 @@ package org.apache.ibatis.cache.decorators;
 import org.apache.ibatis.cache.Cache;
 
 /**
+ *
+ * 同步缓存
+ * 防止多线程问题
+ * 核心: 加锁
+ *  ReadWriteLock.readLock().lock()/unlock()
+ *  ReadWriteLock.writeLock().lock()/unlock()
+ *
  * @author Clinton Begin
  */
 public class SynchronizedCache implements Cache {

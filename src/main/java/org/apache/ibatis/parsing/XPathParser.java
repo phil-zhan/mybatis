@@ -41,17 +41,27 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /**
+ * XPath解析器，用的都是JDK的类包,封装了一下，使得使用起来更方便
+ *
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
 public class XPathParser {
 
+  // 文档对象
   private final Document document;
+  // 是否开启验证
   private boolean validation;
+  // 用于加载本地DTD文件
   private EntityResolver entityResolver;
+  // mybatis-config.xml中properties标签定义的键值对集合
   private Properties variables;
+  // Xpath对象
   private XPath xpath;
 
+
+  //一些构造函数,全部调用commonConstructor以及createDocument
+  //1~4,默认不需要验证
   public XPathParser(String xml) {
     commonConstructor(false, null, null);
     this.document = createDocument(new InputSource(new StringReader(xml)));
@@ -72,6 +82,7 @@ public class XPathParser {
     this.document = document;
   }
 
+  //5~8,传入是否需要验证参数
   public XPathParser(String xml, boolean validation) {
     commonConstructor(validation, null, null);
     this.document = createDocument(new InputSource(new StringReader(xml)));
@@ -92,6 +103,7 @@ public class XPathParser {
     this.document = document;
   }
 
+  //9~12,传入是否需要验证参数,Properties
   public XPathParser(String xml, boolean validation, Properties variables) {
     commonConstructor(validation, variables, null);
     this.document = createDocument(new InputSource(new StringReader(xml)));
@@ -112,6 +124,7 @@ public class XPathParser {
     this.document = document;
   }
 
+  //13~16,传入是否需要验证参数,Properties,EntityResolver
   public XPathParser(String xml, boolean validation, Properties variables, EntityResolver entityResolver) {
     commonConstructor(validation, variables, entityResolver);
     this.document = createDocument(new InputSource(new StringReader(xml)));
@@ -132,16 +145,20 @@ public class XPathParser {
     this.document = document;
   }
 
+  //17.设置Properties
   public void setVariables(Properties variables) {
     this.variables = variables;
   }
 
+  // 通过一系列的eval*方法来解析boolean、short、long、int、string、Node等类型的信息
   public String evalString(String expression) {
     return evalString(document, expression);
   }
 
   public String evalString(Object root, String expression) {
+    //1.先用xpath解析
     String result = (String) evaluate(expression, root, XPathConstants.STRING);
+    //2.再调用PropertyParser去解析,也就是替换 ${} 这种格式的字符串
     result = PropertyParser.parse(result, variables);
     return result;
   }
@@ -198,6 +215,7 @@ public class XPathParser {
     return evalNodes(document, expression);
   }
 
+  //返回节点List
   public List<XNode> evalNodes(Object root, String expression) {
     List<XNode> xnodes = new ArrayList<>();
     NodeList nodes = (NodeList) evaluate(expression, root, XPathConstants.NODESET);
@@ -211,6 +229,7 @@ public class XPathParser {
     return evalNode(document, expression);
   }
 
+  //返回节点
   public XNode evalNode(Object root, String expression) {
     Node node = (Node) evaluate(expression, root, XPathConstants.NODE);
     if (node == null) {
@@ -221,27 +240,40 @@ public class XPathParser {
 
   private Object evaluate(String expression, Object root, QName returnType) {
     try {
+      // 最终合流到这儿，直接调用XPath.evaluate
       return xpath.evaluate(expression, root, returnType);
     } catch (Exception e) {
       throw new BuilderException("Error evaluating XPath.  Cause: " + e, e);
     }
   }
 
+  // 在创建文档之前一定要先调用commonConstructor方法完成初始化操作
   private Document createDocument(InputSource inputSource) {
     // important: this must only be called AFTER common constructor
     try {
+      // 创建DocumentBuilderFactory对象
       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+      // 对DocumentBuilderFactory进行一些列的配置
       factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
       factory.setValidating(validation);
 
+      // 名称空间
       factory.setNamespaceAware(false);
+      // 忽略注释
       factory.setIgnoringComments(true);
+      // 忽略空白
       factory.setIgnoringElementContentWhitespace(false);
+      // 把 CDATA 节点转换为 Text 节点
       factory.setCoalescing(false);
+      // 扩展实体引用
       factory.setExpandEntityReferences(true);
 
+      // 创建DocumentBuilder对象并进行配置
       DocumentBuilder builder = factory.newDocumentBuilder();
+      // 需要注意的就是定义了EntityResolver(XMLMapperEntityResolver)，这样不用联网去获取DTD，
+      // 将DTD放在org\apache\ibatis\builder\xml\mybatis-3-config.dtd,来达到验证xml合法性的目的
       builder.setEntityResolver(entityResolver);
+      // ErrorHandler接口的方法都是空实现
       builder.setErrorHandler(new ErrorHandler() {
         @Override
         public void error(SAXParseException exception) throws SAXException {
@@ -258,6 +290,7 @@ public class XPathParser {
           // NOP
         }
       });
+      // 加载xml文件
       return builder.parse(inputSource);
     } catch (Exception e) {
       throw new BuilderException("Error creating document instance.  Cause: " + e, e);
@@ -268,6 +301,7 @@ public class XPathParser {
     this.validation = validation;
     this.entityResolver = entityResolver;
     this.variables = variables;
+    //共通构造函数，除了把参数都设置到实例变量里面去以外，还初始化了XPath
     XPathFactory factory = XPathFactory.newInstance();
     this.xpath = factory.newXPath();
   }

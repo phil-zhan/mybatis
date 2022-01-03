@@ -20,9 +20,11 @@ import java.lang.reflect.Field;
 import org.apache.ibatis.reflection.Reflector;
 
 /**
+ * 属性复制器
+ *
  * @author Clinton Begin
  */
-public final class PropertyCopier {
+public final class   PropertyCopier {
 
   private PropertyCopier() {
     // Prevent Instantiation of Static Class
@@ -31,10 +33,12 @@ public final class PropertyCopier {
   public static void copyBeanProperties(Class<?> type, Object sourceBean, Object destinationBean) {
     Class<?> parent = type;
     while (parent != null) {
+      //循环将父类的属性都要复制过来
       final Field[] fields = parent.getDeclaredFields();
       for (Field field : fields) {
         try {
           try {
+            // 将sourceBean对象中的属性值设置到destinationBean对象中
             field.set(destinationBean, field.get(sourceBean));
           } catch (IllegalAccessException e) {
             if (Reflector.canControlMemberAccessible()) {
@@ -48,6 +52,7 @@ public final class PropertyCopier {
           // Nothing useful to do, will only fail on final fields, which will be ignored.
         }
       }
+      // 继续拷贝父类中定义的字段
       parent = parent.getSuperclass();
     }
   }

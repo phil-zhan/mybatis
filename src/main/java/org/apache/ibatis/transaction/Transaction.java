@@ -19,6 +19,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
+ * 事务，包装了一个Connection, 包含commit,rollback,close方法
+ * 在 MyBatis 中有两种事务管理器类型(也就是 type=”[JDBC|MANAGED]”):
+ *
  * Wraps a database connection.
  * Handles the connection lifecycle that comprises: its creation, preparation, commit/rollback and close.
  *
@@ -27,6 +30,8 @@ import java.sql.SQLException;
 public interface Transaction {
 
   /**
+   * 获取对应的数据库连接对象
+   *
    * Retrieve inner database connection.
    * @return DataBase connection
    * @throws SQLException
@@ -35,6 +40,8 @@ public interface Transaction {
   Connection getConnection() throws SQLException;
 
   /**
+   * 提交事务
+   *
    * Commit inner database connection.
    * @throws SQLException
    *           the SQL exception
@@ -42,6 +49,8 @@ public interface Transaction {
   void commit() throws SQLException;
 
   /**
+   * 回滚事务
+   *
    * Rollback inner database connection.
    * @throws SQLException
    *           the SQL exception
@@ -49,6 +58,8 @@ public interface Transaction {
   void rollback() throws SQLException;
 
   /**
+   * 关闭数据库连接
+   *
    * Close inner database connection.
    * @throws SQLException
    *           the SQL exception
@@ -56,6 +67,8 @@ public interface Transaction {
   void close() throws SQLException;
 
   /**
+   * 获取事务超时时间
+   *
    * Get transaction timeout if set.
    *
    * @return the timeout

@@ -20,14 +20,19 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * 拦截器链
+ *
  * @author Clinton Begin
  */
 public class InterceptorChain {
 
+  //内部就是一个拦截器的List
   private final List<Interceptor> interceptors = new ArrayList<>();
 
   public Object pluginAll(Object target) {
+    // 遍历interceptors集合
     for (Interceptor interceptor : interceptors) {
+      // 调用plugin方法
       target = interceptor.plugin(target);
     }
     return target;

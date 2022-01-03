@@ -40,6 +40,8 @@ import org.apache.ibatis.reflection.property.PropertyNamer;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * Cglib延迟加载代理工厂
+ *
  * @author Clinton Begin
  */
 public class CglibProxyFactory implements ProxyFactory {
@@ -49,6 +51,7 @@ public class CglibProxyFactory implements ProxyFactory {
 
   public CglibProxyFactory() {
     try {
+      // 先检查是否有Cglib
       Resources.classForName("net.sf.cglib.proxy.Enhancer");
     } catch (Throwable e) {
       throw new IllegalStateException("Cannot enable lazy loading because CGLIB is not available. Add CGLIB to your classpath.", e);
@@ -65,9 +68,11 @@ public class CglibProxyFactory implements ProxyFactory {
   }
 
   static Object crateProxy(Class<?> type, Callback callback, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
+    // 核心就是用cglib的Enhancer
     Enhancer enhancer = new Enhancer();
     enhancer.setCallback(callback);
     enhancer.setSuperclass(type);
+    // 查找名为writeReplace的方法，查找不到writePlace方法，则添加WriteReplaceInterface接口，该接口定义了writeReplace方法
     try {
       type.getDeclaredMethod(WRITE_REPLACE_METHOD);
       // ObjectOutputStream will call writeReplace of objects returned by writeReplace
@@ -79,6 +84,7 @@ public class CglibProxyFactory implements ProxyFactory {
     } catch (SecurityException e) {
       // nothing to do here
     }
+    // 根据构造方法的参数列表，调用相应的Enhancer.create方法，创建代理对象
     Object enhanced;
     if (constructorArgTypes.isEmpty()) {
       enhanced = enhancer.create();
@@ -92,11 +98,17 @@ public class CglibProxyFactory implements ProxyFactory {
 
   private static class EnhancedResultObjectProxyImpl implements MethodInterceptor {
 
+    // 需要创建代理的目标类
     private final Class<?> type;
+    // ResultLoaderMap对象，其中记录了延迟加载的属性名称与对应ResultLoader对象之间的关系
     private final ResultLoaderMap lazyLoader;
+    // 在mybatis-config.xml文件中，aggressiveLazyLoading配置项的值
     private final boolean aggressive;
+    // 触发延迟记载的方法名列表，如果调用了该列表中的方法，则对全部的延迟加载属性进行加载操作
     private final Set<String> lazyLoadTriggerMethods;
+    // ObjectFactory对象
     private final ObjectFactory objectFactory;
+    // 创建代理对象时，使用的构造方法的参数类型和参数值
     private final List<Class<?>> constructorArgTypes;
     private final List<Object> constructorArgs;
 
@@ -112,18 +124,23 @@ public class CglibProxyFactory implements ProxyFactory {
 
     public static Object createProxy(Object target, ResultLoaderMap lazyLoader, Configuration configuration, ObjectFactory objectFactory, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
       final Class<?> type = target.getClass();
+      // EnhancedResultObjectProxyImpl对象本身就是Callback接口的实现
       EnhancedResultObjectProxyImpl callback = new EnhancedResultObjectProxyImpl(type, lazyLoader, configuration, objectFactory, constructorArgTypes, constructorArgs);
+      // 调用CglibProxyFactory.createProxy方法创建代理对象
       Object enhanced = crateProxy(type, callback, constructorArgTypes, constructorArgs);
+      // 将target对象中国的属性值复制到代理对象的对应属性中
       PropertyCopier.copyBeanProperties(type, target, enhanced);
       return enhanced;
     }
 
+    // 核心就是反调intercept
     @Override
     public Object intercept(Object enhanced, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
       final String methodName = method.getName();
       try {
         synchronized (lazyLoader) {
           if (WRITE_REPLACE_METHOD.equals(methodName)) {
+            // 调用的方法名为writeReplace的相关处理
             Object original;
             if (constructorArgTypes.isEmpty()) {
               original = objectFactory.create(type);
@@ -137,21 +154,27 @@ public class CglibProxyFactory implements ProxyFactory {
               return original;
             }
           } else {
+            // 检测是否存在延迟加载属性，以及调用方法名是否为finalize
             if (lazyLoader.size() > 0 && !FINALIZE_METHOD.equals(methodName)) {
+              // 如果aggressiveLazyLoading配置项为true，或是调用方法的名称存在于lazyLoadTriggerMethods列表中，则将全部的属性都加载完成
               if (aggressive || lazyLoadTriggerMethods.contains(methodName)) {
                 lazyLoader.loadAll();
               } else if (PropertyNamer.isSetter(methodName)) {
                 final String property = PropertyNamer.methodToProperty(methodName);
                 lazyLoader.remove(property);
               } else if (PropertyNamer.isGetter(methodName)) {
+                // 如果调用了某属性的getter方法，先获取该属性的名称
                 final String property = PropertyNamer.methodToProperty(methodName);
+                // 检测是否为延迟加载的属性
                 if (lazyLoader.hasLoader(property)) {
+                  // 触发该属性的加载操作
                   lazyLoader.load(property);
                 }
               }
             }
           }
         }
+        // 调用目标对象的方法
         return methodProxy.invokeSuper(enhanced, args);
       } catch (Throwable t) {
         throw ExceptionUtil.unwrapThrowable(t);

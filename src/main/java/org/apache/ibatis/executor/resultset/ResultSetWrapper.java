@@ -41,24 +41,36 @@ import org.apache.ibatis.type.UnknownTypeHandler;
  */
 public class ResultSetWrapper {
 
+  // 基本的resultSet对象
   private final ResultSet resultSet;
   private final TypeHandlerRegistry typeHandlerRegistry;
+  // 记录了ResultSet中每列的列名
   private final List<String> columnNames = new ArrayList<>();
+  // 记录ResultSet中每列对应的Java类型
   private final List<String> classNames = new ArrayList<>();
+  // 记录了ResultSet中每列对应的JdbcType类型
   private final List<JdbcType> jdbcTypes = new ArrayList<>();
+  // 记录了每列对应的TypeHandler对象，key是列名，value是TypeHandler集合
   private final Map<String, Map<Class<?>, TypeHandler<?>>> typeHandlerMap = new HashMap<>();
+  // 记录了被映射的列名，其中key是ResultMap对象的id，value是该ResultMap对象映射的列名集合
   private final Map<String, List<String>> mappedColumnNamesMap = new HashMap<>();
+  // 记录了未映射的列名，其中key是ResultMap对象的id，value是该ResultMap对象未映射的列名集合
   private final Map<String, List<String>> unMappedColumnNamesMap = new HashMap<>();
 
   public ResultSetWrapper(ResultSet rs, Configuration configuration) throws SQLException {
     super();
     this.typeHandlerRegistry = configuration.getTypeHandlerRegistry();
     this.resultSet = rs;
+    // 获取ResultSet的元信息
     final ResultSetMetaData metaData = rs.getMetaData();
+    // ResultSet中的列数
     final int columnCount = metaData.getColumnCount();
     for (int i = 1; i <= columnCount; i++) {
+      // 获取列名或是通过AS关键字指定的列名
       columnNames.add(configuration.isUseColumnLabel() ? metaData.getColumnLabel(i) : metaData.getColumnName(i));
+      // 该列的JdbcType类型
       jdbcTypes.add(JdbcType.forCode(metaData.getColumnType(i)));
+      // 该列对应的Java类型
       classNames.add(metaData.getColumnClassName(i));
     }
   }
@@ -145,25 +157,33 @@ public class ResultSetWrapper {
   }
 
   private void loadMappedAndUnmappedColumnNames(ResultMap resultMap, String columnPrefix) throws SQLException {
+    // mappedColumnNames和unmappedColumnNames分别记录ResultMap中映射的列名和表映射的列名
     List<String> mappedColumnNames = new ArrayList<>();
     List<String> unmappedColumnNames = new ArrayList<>();
+    // 列名前缀修改成大写
     final String upperColumnPrefix = columnPrefix == null ? null : columnPrefix.toUpperCase(Locale.ENGLISH);
+    // ResultMap中定义的列名加上前缀，获得实际映射的列名
     final Set<String> mappedColumns = prependPrefixes(resultMap.getMappedColumns(), upperColumnPrefix);
     for (String columnName : columnNames) {
       final String upperColumnName = columnName.toUpperCase(Locale.ENGLISH);
       if (mappedColumns.contains(upperColumnName)) {
+        // 记录映射的列名
         mappedColumnNames.add(upperColumnName);
       } else {
+        // 记录未映射的列名
         unmappedColumnNames.add(columnName);
       }
     }
+    // 将ResultMap的Id和列前缀组成key，将ResultMap映射的列名及未映射的列名保存到mappedColumnNames和unmappedColumnNames中
     mappedColumnNamesMap.put(getMapKey(resultMap, columnPrefix), mappedColumnNames);
     unMappedColumnNamesMap.put(getMapKey(resultMap, columnPrefix), unmappedColumnNames);
   }
 
   public List<String> getMappedColumnNames(ResultMap resultMap, String columnPrefix) throws SQLException {
+    // 在MappedColumnNamesMap集合中查找被映射的列名，其中key是由ResultMap的id与列前缀组成
     List<String> mappedColumnNames = mappedColumnNamesMap.get(getMapKey(resultMap, columnPrefix));
     if (mappedColumnNames == null) {
+      // 未查找到指定的ResultMap映射的列名，则加载后存入到mappedColumnNamesMap集合
       loadMappedAndUnmappedColumnNames(resultMap, columnPrefix);
       mappedColumnNames = mappedColumnNamesMap.get(getMapKey(resultMap, columnPrefix));
     }

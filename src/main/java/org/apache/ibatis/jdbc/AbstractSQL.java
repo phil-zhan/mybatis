@@ -99,6 +99,7 @@ public abstract class AbstractSQL<T> {
     return getSelf();
   }
 
+  //select这个list里加入columns，可以看到下面的方法都是类似的，就是建造者模式，把属性一个个set进去
   public T SELECT(String columns) {
     sql().statementType = SQLStatement.StatementType.SELECT;
     sql().select.add(columns);
@@ -255,6 +256,7 @@ public abstract class AbstractSQL<T> {
 
   public T WHERE(String conditions) {
     sql().where.add(conditions);
+    // 标记最后一个list
     sql().lastList = sql().where;
     return getSelf();
   }
@@ -274,11 +276,13 @@ public abstract class AbstractSQL<T> {
   }
 
   public T OR() {
+    // 最后一个list加上OR
     sql().lastList.add(OR);
     return getSelf();
   }
 
   public T AND() {
+    // 最后一个list加上AND
     sql().lastList.add(AND);
     return getSelf();
   }
@@ -303,6 +307,7 @@ public abstract class AbstractSQL<T> {
 
   public T HAVING(String conditions) {
     sql().having.add(conditions);
+    //标记最后一个list
     sql().lastList = sql().having;
     return getSelf();
   }
@@ -497,8 +502,10 @@ public abstract class AbstractSQL<T> {
 
   }
 
+  // SQL语句
   private static class SQLStatement {
 
+    // 4种语句类型
     public enum StatementType {
       DELETE, INSERT, SELECT, UPDATE
     }
@@ -550,6 +557,7 @@ public abstract class AbstractSQL<T> {
     List<String> having = new ArrayList<>();
     List<String> groupBy = new ArrayList<>();
     List<String> orderBy = new ArrayList<>();
+    // 标记最后一个list
     List<String> lastList = new ArrayList<>();
     List<String> columns = new ArrayList<>();
     List<List<String>> valuesList = new ArrayList<>();
@@ -567,6 +575,7 @@ public abstract class AbstractSQL<T> {
                            String conjunction) {
       if (!parts.isEmpty()) {
         if (!builder.isEmpty()) {
+          //如果前面有东西，另起一行
           builder.append("\n");
         }
         builder.append(keyword);
@@ -585,6 +594,7 @@ public abstract class AbstractSQL<T> {
       }
     }
 
+    //拼装select语句,可以看到都是调用sqlClause
     private String selectSQL(SafeAppendable builder) {
       if (distinct) {
         sqlClause(builder, "SELECT DISTINCT", select, "", "", ", ");
@@ -594,6 +604,7 @@ public abstract class AbstractSQL<T> {
 
       sqlClause(builder, "FROM", tables, "", "", ", ");
       joins(builder);
+      // where条件默认拼接上AND
       sqlClause(builder, "WHERE", where, "(", ")", " AND ");
       sqlClause(builder, "GROUP BY", groupBy, "", "", ", ");
       sqlClause(builder, "HAVING", having, "(", ")", " AND ");
@@ -635,6 +646,7 @@ public abstract class AbstractSQL<T> {
       return builder.toString();
     }
 
+    //拼装SQL
     public String sql(Appendable a) {
       SafeAppendable builder = new SafeAppendable(a);
       if (statementType == null) {

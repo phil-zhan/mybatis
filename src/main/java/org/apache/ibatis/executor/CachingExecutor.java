@@ -33,6 +33,8 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.transaction.Transaction;
 
 /**
+ * 二级缓存执行器
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
@@ -72,6 +74,7 @@ public class CachingExecutor implements Executor {
 
   @Override
   public int update(MappedStatement ms, Object parameterObject) throws SQLException {
+    //刷新缓存完再update
     flushCacheIfRequired(ms);
     return delegate.update(ms, parameterObject);
   }
@@ -84,28 +87,40 @@ public class CachingExecutor implements Executor {
 
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
+    // 获取BoundSql对象
     BoundSql boundSql = ms.getBoundSql(parameterObject);
+    // 创建CacheKey对象
     CacheKey key = createCacheKey(ms, parameterObject, rowBounds, boundSql);
     return query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
 
+  // 被ResultLoader.selectList调用
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql)
       throws SQLException {
+    // 获取查询语句所在命名空间对应的二级缓存
     Cache cache = ms.getCache();
+    // 是否开启了二级缓存
     if (cache != null) {
+      // 根据select节点的配置，决定是否需要清空二级缓存
       flushCacheIfRequired(ms);
+      // 检测SQL节点的useCache配置以及是否使用了resultHandler配置
       if (ms.isUseCache() && resultHandler == null) {
+        // 二级缓存不能保存输出类型的参数，如果查询操作调用了包含输出参数的存储过程，则报错
         ensureNoOutParams(ms, boundSql);
         @SuppressWarnings("unchecked")
+        // 查询二级缓存
         List<E> list = (List<E>) tcm.getObject(cache, key);
         if (list == null) {
+          // 二级缓存没有相应的结果对，调用封装的Executor对象的query方法
           list = delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
+          // 将查询结果保存到TransactionalCache.entriesToAddOnCommit集合中
           tcm.putObject(cache, key, list); // issue #578 and #116
         }
         return list;
       }
     }
+    // 没有启动二级缓存，直接调用底层Executor执行数据库查询操作
     return delegate.query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }
 
@@ -116,16 +131,20 @@ public class CachingExecutor implements Executor {
 
   @Override
   public void commit(boolean required) throws SQLException {
+    // 调用底层的Executor提交事务
     delegate.commit(required);
+    // 遍历所有相关的TransactionalCache对象执行commit方法
     tcm.commit();
   }
 
   @Override
   public void rollback(boolean required) throws SQLException {
     try {
+      // 调用底层的Executor回滚事务
       delegate.rollback(required);
     } finally {
       if (required) {
+        // 遍历所有相关的TransactionalCache对象执行rollback方法
         tcm.rollback();
       }
     }

@@ -29,11 +29,16 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 构建器的基类，建造者模式
+ *
  * @author Clinton Begin
  */
 public abstract class BaseBuilder {
+  // Configuration是Mybatis初始化过程的核心对象，mybatis中几乎全部的配置信息会保存到Configuration中，
   protected final Configuration configuration;
+  // 在mybatis-config配置文件中可以使用typeAliases标签定义别名，这些定义的别名都会记录在此对象中
   protected final TypeAliasRegistry typeAliasRegistry;
+  // 在mybatis-config配置文件中可以使用typeHandlers标签自定义TypeHandler,完成指定数据类型与java类型的转换，这些typeHandler对象会记录在此对象中
   protected final TypeHandlerRegistry typeHandlerRegistry;
 
   public BaseBuilder(Configuration configuration) {
@@ -58,11 +63,13 @@ public abstract class BaseBuilder {
     return value == null ? defaultValue : Integer.valueOf(value);
   }
 
+  // 把以逗号分割的一个字符串重新包装，返回一个Set
   protected Set<String> stringSetValueOf(String value, String defaultValue) {
     value = value == null ? defaultValue : value;
     return new HashSet<>(Arrays.asList(value.split(",")));
   }
 
+  // 解析JdbcType
   protected JdbcType resolveJdbcType(String alias) {
     if (alias == null) {
       return null;
@@ -74,6 +81,7 @@ public abstract class BaseBuilder {
     }
   }
 
+  // 解析ResultSetType
   protected ResultSetType resolveResultSetType(String alias) {
     if (alias == null) {
       return null;
@@ -85,6 +93,7 @@ public abstract class BaseBuilder {
     }
   }
 
+  // 解析ParameterMode
   protected ParameterMode resolveParameterMode(String alias) {
     if (alias == null) {
       return null;
@@ -96,6 +105,7 @@ public abstract class BaseBuilder {
     }
   }
 
+  // 根据别名解析Class，然后创建实例
   protected Object createInstance(String alias) {
     Class<?> clazz = resolveClass(alias);
     if (clazz == null) {
@@ -108,6 +118,7 @@ public abstract class BaseBuilder {
     }
   }
 
+  // 根据别名解析Class,其实是去查看 类型别名注册/事务管理器别名
   protected <T> Class<? extends T> resolveClass(String alias) {
     if (alias == null) {
       return null;
@@ -119,16 +130,20 @@ public abstract class BaseBuilder {
     }
   }
 
+  // 解析类型处理器
   protected TypeHandler<?> resolveTypeHandler(Class<?> javaType, String typeHandlerAlias) {
     if (typeHandlerAlias == null) {
       return null;
     }
+    // 先取得别名所属的Class
     Class<?> type = resolveClass(typeHandlerAlias);
+    // 如果不是TypeHandler的子类,报错
     if (type != null && !TypeHandler.class.isAssignableFrom(type)) {
       throw new BuilderException("Type " + type.getName() + " is not a valid TypeHandler because it does not implement TypeHandler interface");
     }
     @SuppressWarnings("unchecked") // already verified it is a TypeHandler
     Class<? extends TypeHandler<?>> typeHandlerType = (Class<? extends TypeHandler<?>>) type;
+    // 再去调用另一个重载的方法
     return resolveTypeHandler(javaType, typeHandlerType);
   }
 
@@ -137,9 +152,11 @@ public abstract class BaseBuilder {
       return null;
     }
     // javaType ignored for injected handlers see issue #746 for full detail
+    // 去typeHandlerRegistry查询对应的TypeHandler
     TypeHandler<?> handler = typeHandlerRegistry.getMappingTypeHandler(typeHandlerType);
     if (handler == null) {
       // not in registry, create a new one
+      // 如果没有在Registry找到，调用typeHandlerRegistry.getInstance来new一个TypeHandler返回
       handler = typeHandlerRegistry.getInstance(javaType, typeHandlerType);
     }
     return handler;

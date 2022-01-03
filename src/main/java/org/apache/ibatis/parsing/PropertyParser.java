@@ -18,6 +18,8 @@ package org.apache.ibatis.parsing;
 import java.util.Properties;
 
 /**
+ * 属性解析器
+ *
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
@@ -25,6 +27,8 @@ public class PropertyParser {
 
   private static final String KEY_PREFIX = "org.apache.ibatis.parsing.PropertyParser.";
   /**
+   * 在mybatis-config.xml文件中properties节点下配置是否开启默认值功能的对应配置项
+   *
    * The special property key that indicate whether enable a default value on placeholder.
    * <p>
    *   The default value is {@code false} (indicate disable a default value on placeholder)
@@ -35,6 +39,8 @@ public class PropertyParser {
   public static final String KEY_ENABLE_DEFAULT_VALUE = KEY_PREFIX + "enable-default-value";
 
   /**
+   * 配置占位符与默认值之间的默认分隔符的对应配置项
+   *
    * The special property key that specify a separator for key and default value on placeholder.
    * <p>
    *   The default separator is {@code ":"}.
@@ -43,7 +49,9 @@ public class PropertyParser {
    */
   public static final String KEY_DEFAULT_VALUE_SEPARATOR = KEY_PREFIX + "default-value-separator";
 
+  // 默认情况下，关闭默认值功能
   private static final String ENABLE_DEFAULT_VALUE = "false";
+  // 默认分隔符是冒号
   private static final String DEFAULT_VALUE_SEPARATOR = ":";
 
   private PropertyParser() {
@@ -52,13 +60,19 @@ public class PropertyParser {
 
   public static String parse(String string, Properties variables) {
     VariableTokenHandler handler = new VariableTokenHandler(variables);
+    // 创建GenericTokenParser对象，并制定其处理的占位符格式为${}
     GenericTokenParser parser = new GenericTokenParser("${", "}", handler);
     return parser.parse(string);
   }
 
+  //TokenHandler的实现子类，通过其完整占位符的解析，跟GenericTokenParser配合使用
   private static class VariableTokenHandler implements TokenHandler {
+
+    // <properties>节点下定义的键值对，用于替换占位符
     private final Properties variables;
+    // 是否支持占位符中使用默认值的功能
     private final boolean enableDefaultValue;
+    // 指定占位符和默认值之间的分隔符
     private final String defaultValueSeparator;
 
     private VariableTokenHandler(Properties variables) {
@@ -71,25 +85,35 @@ public class PropertyParser {
       return (variables == null) ? defaultValue : variables.getProperty(key, defaultValue);
     }
 
+    // 先按照defaultValuesSeparator字段指定的分隔符对整个占位符切分，得到占位符的名称和默认值，然后按照切分得到的占位符名称查找对应的值，
+    // 如果在<properties>节点下为定义相应的键值对，则将切分得到的默认值作为解析结果返回
     @Override
     public String handleToken(String content) {
+      // 检测variables集合是否为空
       if (variables != null) {
         String key = content;
+        // 检测是否支持占位符中使用默认值的功能
         if (enableDefaultValue) {
+          // 查找分隔符
           final int separatorIndex = content.indexOf(defaultValueSeparator);
           String defaultValue = null;
           if (separatorIndex >= 0) {
+            // 获取占位符的名称
             key = content.substring(0, separatorIndex);
+            // 获取默认值
             defaultValue = content.substring(separatorIndex + defaultValueSeparator.length());
           }
           if (defaultValue != null) {
+            // 在variables集合中查找指定的占位符
             return variables.getProperty(key, defaultValue);
           }
         }
+        // 不支持默认值的功能，则直接查找variables集合
         if (variables.containsKey(key)) {
           return variables.getProperty(key);
         }
       }
+      // variables集合为空
       return "${" + content + "}";
     }
   }

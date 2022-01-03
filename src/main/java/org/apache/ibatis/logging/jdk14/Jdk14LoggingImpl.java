@@ -21,6 +21,8 @@ import java.util.logging.Logger;
 import org.apache.ibatis.logging.Log;
 
 /**
+ * 用的jdk1.4 logger里的Logger
+ *
  * @author Clinton Begin
  */
 public class Jdk14LoggingImpl implements Log {

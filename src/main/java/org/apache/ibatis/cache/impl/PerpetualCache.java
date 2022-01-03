@@ -22,12 +22,18 @@ import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.cache.CacheException;
 
 /**
+ *
+ * 永久缓存
+ * 一旦存入就一直保持
+ *
  * @author Clinton Begin
  */
 public class PerpetualCache implements Cache {
 
+  // Cache对象的唯一标识
   private final String id;
 
+  // 记录缓存想的map对象
   private final Map<Object, Object> cache = new HashMap<>();
 
   public PerpetualCache(String id) {
@@ -66,6 +72,7 @@ public class PerpetualCache implements Cache {
 
   @Override
   public boolean equals(Object o) {
+    // 只要id相等就认为两个cache相同
     if (getId() == null) {
       throw new CacheException("Cache instances require an ID.");
     }

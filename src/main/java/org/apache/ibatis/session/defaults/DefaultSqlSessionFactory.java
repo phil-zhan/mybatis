@@ -32,6 +32,7 @@ import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.managed.ManagedTransactionFactory;
 
 /**
+ * 默认的SqlSessionFactory
  * @author Clinton Begin
  */
 public class DefaultSqlSessionFactory implements SqlSessionFactory {
@@ -42,8 +43,11 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
     this.configuration = configuration;
   }
 
+  //最终都会调用2种方法：openSessionFromDataSource,openSessionFromConnection
+  //以下6个方法都会调用openSessionFromDataSource
   @Override
   public SqlSession openSession() {
+    // 获取默认的执行器类型
     return openSessionFromDataSource(configuration.getDefaultExecutorType(), null, false);
   }
 
@@ -72,6 +76,7 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
     return openSessionFromDataSource(execType, null, autoCommit);
   }
 
+  //以下2个方法都会调用openSessionFromConnection
   @Override
   public SqlSession openSession(Connection connection) {
     return openSessionFromConnection(configuration.getDefaultExecutorType(), connection);
@@ -90,15 +95,22 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
   private SqlSession openSessionFromDataSource(ExecutorType execType, TransactionIsolationLevel level, boolean autoCommit) {
     Transaction tx = null;
     try {
+      // 获取mybatis-config.xml配置文件中配置的Environment对象，
       final Environment environment = configuration.getEnvironment();
+      // 获取TransactionFactory对象
       final TransactionFactory transactionFactory = getTransactionFactoryFromEnvironment(environment);
+      // 创建Transaction对象
       tx = transactionFactory.newTransaction(environment.getDataSource(), level, autoCommit);
+      // 根据配置创建Executor对象
       final Executor executor = configuration.newExecutor(tx, execType);
+      //然后产生一个DefaultSqlSession
       return new DefaultSqlSession(configuration, executor, autoCommit);
     } catch (Exception e) {
+      //如果打开事务出错，则关闭它
       closeTransaction(tx); // may have fetched a connection so lets call close()
       throw ExceptionFactory.wrapException("Error opening session.  Cause: " + e, e);
     } finally {
+      //最后清空错误上下文
       ErrorContext.instance().reset();
     }
   }
@@ -107,15 +119,21 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
     try {
       boolean autoCommit;
       try {
+        // 获取当前连接的事务是否为自动提交方法
         autoCommit = connection.getAutoCommit();
       } catch (SQLException e) {
         // Failover to true, as most poor drivers
         // or databases won't support transactions
+        // 当前数据库驱动提供的连接不支持事务，则可能会抛出异常
         autoCommit = true;
       }
+      // 获取mybatis-config.xml配置文件中配置的Environment对象
       final Environment environment = configuration.getEnvironment();
+      // 获取TransactionFactory对象
       final TransactionFactory transactionFactory = getTransactionFactoryFromEnvironment(environment);
+      // 创建Transaction对象
       final Transaction tx = transactionFactory.newTransaction(connection);
+      // 根据配置创建Executor对象
       final Executor executor = configuration.newExecutor(tx, execType);
       return new DefaultSqlSession(configuration, executor, autoCommit);
     } catch (Exception e) {
@@ -126,6 +144,7 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
   }
 
   private TransactionFactory getTransactionFactoryFromEnvironment(Environment environment) {
+    //如果没有配置事务工厂，则返回托管事务工厂
     if (environment == null || environment.getTransactionFactory() == null) {
       return new ManagedTransactionFactory();
     }

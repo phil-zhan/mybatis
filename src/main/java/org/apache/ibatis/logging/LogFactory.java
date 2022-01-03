@@ -18,19 +18,24 @@ package org.apache.ibatis.logging;
 import java.lang.reflect.Constructor;
 
 /**
+ * 日志工厂
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
 public final class LogFactory {
 
   /**
+   * 给支持marker功能的logger使用(目前有slf4j, log4j2)
    * Marker to be used by logging implementations that support markers.
    */
   public static final String MARKER = "MYBATIS";
 
+  // 记录当前使用的第三方日志组件所对应的适配器的构造方法
   private static Constructor<? extends Log> logConstructor;
 
   static {
+    // 针对每种日志组件调用tryImplementation方法进行尝试加载，具体的调用顺序如下所示
     tryImplementation(LogFactory::useSlf4jLogging);
     tryImplementation(LogFactory::useCommonsLogging);
     tryImplementation(LogFactory::useLog4J2Logging);
@@ -39,22 +44,27 @@ public final class LogFactory {
     tryImplementation(LogFactory::useNoLogging);
   }
 
+  // 单例模式，不得自己new实例
   private LogFactory() {
     // disable construction
   }
 
+  // 根据传入的类来构建Log
   public static Log getLog(Class<?> clazz) {
     return getLog(clazz.getName());
   }
 
+  // 根据传入的类名来构建Log
   public static Log getLog(String logger) {
     try {
+      //构造函数，参数必须是一个，为String型，指明logger的名称
       return logConstructor.newInstance(logger);
     } catch (Throwable t) {
       throw new LogException("Error creating logger for logger " + logger + ".  Cause: " + t, t);
     }
   }
 
+  //提供一个扩展功能，如果以上log都不满意，可以使用自定义的log
   public static synchronized void useCustomLogging(Class<? extends Log> clazz) {
     setImplementation(clazz);
   }
@@ -67,10 +77,6 @@ public final class LogFactory {
     setImplementation(org.apache.ibatis.logging.commons.JakartaCommonsLoggingImpl.class);
   }
 
-  /**
-   * @deprecated Since 3.5.9 - See https://github.com/mybatis/mybatis-3/issues/1223. This method will remove future.
-   */
-  @Deprecated
   public static synchronized void useLog4JLogging() {
     setImplementation(org.apache.ibatis.logging.log4j.Log4jImpl.class);
   }
@@ -103,11 +109,14 @@ public final class LogFactory {
 
   private static void setImplementation(Class<? extends Log> implClass) {
     try {
+      // 获取指定适配器的构造方法
       Constructor<? extends Log> candidate = implClass.getConstructor(String.class);
+      // 实例化适配器
       Log log = candidate.newInstance(LogFactory.class.getName());
       if (log.isDebugEnabled()) {
         log.debug("Logging initialized using '" + implClass + "' adapter.");
       }
+      // 初始化logConstructor字段
       logConstructor = candidate;
     } catch (Throwable t) {
       throw new LogException("Error setting Log implementation.  Cause: " + t, t);

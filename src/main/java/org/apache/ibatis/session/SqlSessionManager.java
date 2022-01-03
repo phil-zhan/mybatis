@@ -30,17 +30,23 @@ import org.apache.ibatis.executor.BatchResult;
 import org.apache.ibatis.reflection.ExceptionUtil;
 
 /**
+ * SqlSession管理员
+ *
  * @author Larry Meadors
  */
 public class SqlSessionManager implements SqlSessionFactory, SqlSession {
 
+  // 底层封装的SqlSessionFactory对象
   private final SqlSessionFactory sqlSessionFactory;
+  // localSqlSession中记录的SqlSession对象的代理对象，在SqlSessionManager初始化时，会使用JDK动态代理的方式为localSqlSession创建代理对象
   private final SqlSession sqlSessionProxy;
 
+  // ThreadLocal变量，记录一个与当前线程绑定的SqlSession对象
   private final ThreadLocal<SqlSession> localSqlSession = new ThreadLocal<>();
 
   private SqlSessionManager(SqlSessionFactory sqlSessionFactory) {
     this.sqlSessionFactory = sqlSessionFactory;
+    // 使用动态代理的方式生成SqlSession的代理对象
     this.sqlSessionProxy = (SqlSession) Proxy.newProxyInstance(
         SqlSessionFactory.class.getClassLoader(),
         new Class[]{SqlSession.class},
@@ -337,6 +343,7 @@ public class SqlSessionManager implements SqlSessionFactory, SqlSession {
     }
   }
 
+  //代理模式
   private class SqlSessionInterceptor implements InvocationHandler {
     public SqlSessionInterceptor() {
         // Prevent Synthetic Access
@@ -344,20 +351,26 @@ public class SqlSessionManager implements SqlSessionFactory, SqlSession {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      // 获取当前线程绑定的SqlSession对象
       final SqlSession sqlSession = SqlSessionManager.this.localSqlSession.get();
       if (sqlSession != null) {
         try {
+          // 调用真正的SqlSession对象，完成数据库的相关操作
           return method.invoke(sqlSession, args);
         } catch (Throwable t) {
           throw ExceptionUtil.unwrapThrowable(t);
         }
       } else {
+        // 如果当前线程未绑定SqlSession对象，则创建新的SqlSession对象
         try (SqlSession autoSqlSession = openSession()) {
           try {
+            // 通过创建的SqlSession对象完成数据库操作
             final Object result = method.invoke(autoSqlSession, args);
+            // 提交实际无
             autoSqlSession.commit();
             return result;
           } catch (Throwable t) {
+            // 回滚事务
             autoSqlSession.rollback();
             throw ExceptionUtil.unwrapThrowable(t);
           }

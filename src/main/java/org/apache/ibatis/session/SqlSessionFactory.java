@@ -18,12 +18,15 @@ package org.apache.ibatis.session;
 import java.sql.Connection;
 
 /**
+ * 构建SqlSession的工厂.工厂模式
+ *
  * Creates an {@link SqlSession} out of a connection or a DataSource
  *
  * @author Clinton Begin
  */
 public interface SqlSessionFactory {
 
+  //8个方法可以用来创建SqlSession实例
   SqlSession openSession();
 
   SqlSession openSession(boolean autoCommit);
@@ -32,6 +35,7 @@ public interface SqlSessionFactory {
 
   SqlSession openSession(TransactionIsolationLevel level);
 
+  //执行器的类型
   SqlSession openSession(ExecutorType execType);
 
   SqlSession openSession(ExecutorType execType, boolean autoCommit);

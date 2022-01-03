@@ -114,11 +114,15 @@ public class MapperAnnotationBuilder {
 
   public void parse() {
     String resource = type.toString();
+    // 检测是否已经加载过该接口
     if (!configuration.isResourceLoaded(resource)) {
+      // 检测是否加载过对应的映射配置文件，如果未加载，则创建XMLMapperBuilder对象解析对应的映射文件
       loadXmlResource();
       configuration.addLoadedResource(resource);
       assistant.setCurrentNamespace(type.getName());
+      // 解析@CacheNamespace注解
       parseCache();
+      // 解析@CacheNamespaceRef注解
       parseCacheRef();
       for (Method method : type.getMethods()) {
         if (!canHaveStatement(method)) {
@@ -129,12 +133,15 @@ public class MapperAnnotationBuilder {
           parseResultMap(method);
         }
         try {
+          // 解析@SelectKey,@ResultMap等注解，并创建MappedStatement对象
           parseStatement(method);
         } catch (IncompleteElementException e) {
+          // 如果解析过程出现IncompleteElementException异常，可能是引用了未解析的注解，此处将出现异常的方法添加到incompleteMethod集合中保存
           configuration.addIncompleteMethod(new MethodResolver(this, method));
         }
       }
     }
+    // 遍历incompleteMethods集合中记录的未解析的方法，并重新进行解析
     parsePendingMethods();
   }
 

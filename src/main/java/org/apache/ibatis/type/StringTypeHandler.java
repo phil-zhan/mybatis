@@ -21,6 +21,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
+ * String类型处理器
+ * 调用PreparedStatement.setString, ResultSet.getString, CallableStatement.getString
+ *
  * @author Clinton Begin
  */
 public class StringTypeHandler extends BaseTypeHandler<String> {

@@ -18,6 +18,8 @@ package org.apache.ibatis.builder;
 import org.apache.ibatis.exceptions.PersistenceException;
 
 /**
+ * 构建异常,继承PersistenceException
+ *
  * @author Clinton Begin
  */
 public class BuilderException extends PersistenceException {

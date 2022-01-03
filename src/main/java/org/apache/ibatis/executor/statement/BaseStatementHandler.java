@@ -34,6 +34,8 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 语句处理器的基类
+ *
  * @author Clinton Begin
  */
 public abstract class BaseStatementHandler implements StatementHandler {
@@ -41,16 +43,22 @@ public abstract class BaseStatementHandler implements StatementHandler {
   protected final Configuration configuration;
   protected final ObjectFactory objectFactory;
   protected final TypeHandlerRegistry typeHandlerRegistry;
+  // 将结果集映射成结果对象
   protected final ResultSetHandler resultSetHandler;
+  // 记录使用的ParameterHandler对象，为SQL语句绑定实参，也就是使用传入的实参替代SQL语句中的？占位符
   protected final ParameterHandler parameterHandler;
 
+  // 记录执行SQL语句的Executor对象
   protected final Executor executor;
+  // 记录SQL语句对应的MappedStatement和RowBounds对象
   protected final MappedStatement mappedStatement;
+  // RowBounds记录了用户设置的offset和limit,用于在结果集中定位映射的起始位置和结束位置
   protected final RowBounds rowBounds;
 
   protected BoundSql boundSql;
 
   protected BaseStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) {
+    // 初始化字段
     this.configuration = mappedStatement.getConfiguration();
     this.executor = executor;
     this.mappedStatement = mappedStatement;
@@ -60,13 +68,16 @@ public abstract class BaseStatementHandler implements StatementHandler {
     this.objectFactory = configuration.getObjectFactory();
 
     if (boundSql == null) { // issue #435, get the key before calculating the statement
+      // 调用KeyGenerator.processBefore方法获取主键
       generateKeys(parameterObject);
       boundSql = mappedStatement.getBoundSql(parameterObject);
     }
 
     this.boundSql = boundSql;
 
+    // 生成parameterHandler
     this.parameterHandler = configuration.newParameterHandler(mappedStatement, parameterObject, boundSql);
+    // 生成resultSetHandler
     this.resultSetHandler = configuration.newResultSetHandler(executor, mappedStatement, rowBounds, parameterHandler, resultHandler, boundSql);
   }
 
@@ -80,13 +91,17 @@ public abstract class BaseStatementHandler implements StatementHandler {
     return parameterHandler;
   }
 
+  // 准备语句
   @Override
   public Statement prepare(Connection connection, Integer transactionTimeout) throws SQLException {
     ErrorContext.instance().sql(boundSql.getSql());
     Statement statement = null;
     try {
+      // 实例化Statement
       statement = instantiateStatement(connection);
+      // 设置超时
       setStatementTimeout(statement, transactionTimeout);
+      // 设置读取条数
       setFetchSize(statement);
       return statement;
     } catch (SQLException e) {
@@ -98,8 +113,10 @@ public abstract class BaseStatementHandler implements StatementHandler {
     }
   }
 
+  // 如何实例化Statement，交给子类做
   protected abstract Statement instantiateStatement(Connection connection) throws SQLException;
 
+  // 设置超时,其实就是调用Statement.setQueryTimeout
   protected void setStatementTimeout(Statement stmt, Integer transactionTimeout) throws SQLException {
     Integer queryTimeout = null;
     if (mappedStatement.getTimeout() != null) {
@@ -113,6 +130,7 @@ public abstract class BaseStatementHandler implements StatementHandler {
     StatementUtil.applyTransactionTimeout(stmt, queryTimeout, transactionTimeout);
   }
 
+  // 设置读取条数,其实就是调用Statement.setFetchSize
   protected void setFetchSize(Statement stmt) throws SQLException {
     Integer fetchSize = mappedStatement.getFetchSize();
     if (fetchSize != null) {
@@ -125,6 +143,7 @@ public abstract class BaseStatementHandler implements StatementHandler {
     }
   }
 
+  // 关闭语句
   protected void closeStatement(Statement statement) {
     try {
       if (statement != null) {
@@ -135,6 +154,7 @@ public abstract class BaseStatementHandler implements StatementHandler {
     }
   }
 
+  // 生成key
   protected void generateKeys(Object parameter) {
     KeyGenerator keyGenerator = mappedStatement.getKeyGenerator();
     ErrorContext.instance().store();

@@ -25,6 +25,8 @@ import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
 
 /**
+ * 找一个package下满足条件的所有类
+ *
  * <p>ResolverUtil is used to locate classes that are available in the/a class path and meet
  * arbitrary conditions. The two most common conditions are that a class implements/extends
  * another class, or that is it annotated with a specific annotation. However, through the use
@@ -71,6 +73,8 @@ public class ResolverUtil<T> {
   public interface Test {
 
     /**
+     * 参数type是待检测的类，如果该类复合检测的条件，则matches方法返回true,否则返回false
+     *
      * Will be called repeatedly with candidate classes. Must return True if a class
      * is to be included in the results, false otherwise.
      *
@@ -82,6 +86,8 @@ public class ResolverUtil<T> {
   }
 
   /**
+   * 用于检测指定类是否继承了parent指定的类
+   *
    * A Test that checks to see if each class is assignable to the provided class. Note
    * that this test will match the parent type itself if it is presented for matching.
    */
@@ -91,6 +97,8 @@ public class ResolverUtil<T> {
     private Class<?> parent;
 
     /**
+     * 在构造方法中初始化parent字段
+     *
      * Constructs an IsA test using the supplied Class as the parent class/interface.
      *
      * @param parentType
@@ -113,6 +121,8 @@ public class ResolverUtil<T> {
   }
 
   /**
+   * 检测指定类是否添加了annotation注解
+   *
    * A Test that checks to see if each class is annotated with a specific annotation. If it
    * is, then the test returns true, otherwise false.
    */
@@ -122,6 +132,8 @@ public class ResolverUtil<T> {
     private Class<? extends Annotation> annotation;
 
     /**
+     * 构造方法初始化annotation字段
+     *
      * Constructs an AnnotatedWith test for the specified annotation type.
      *
      * @param annotation
@@ -231,6 +243,8 @@ public class ResolverUtil<T> {
   }
 
   /**
+   * 主要的方法，找一个package下满足条件的所有类,被TypeHanderRegistry,MapperRegistry,TypeAliasRegistry调用
+   *
    * Scans for classes starting at the package provided and descending into subpackages.
    * Each class is offered up to the Test as it is discovered, and if the Test returns
    * true the class is retained.  Accumulated classes can be fetched by calling
@@ -243,12 +257,15 @@ public class ResolverUtil<T> {
    * @return the resolver util
    */
   public ResolverUtil<T> find(Test test, String packageName) {
+    // 根据包名获取其对应的路径
     String path = getPackagePath(packageName);
 
     try {
+      // 通过VFS.list查找packageName包下所有资源
       List<String> children = VFS.getInstance().list(path);
       for (String child : children) {
         if (child.endsWith(".class")) {
+          // 检测该类是否符合test条件
           addIfMatching(test, child);
         }
       }
@@ -281,14 +298,18 @@ public class ResolverUtil<T> {
   @SuppressWarnings("unchecked")
   protected void addIfMatching(Test test, String fqn) {
     try {
+      // fqn是类的完全限定名，即包括其所在包的包名
       String externalName = fqn.substring(0, fqn.indexOf('.')).replace('/', '.');
       ClassLoader loader = getClassLoader();
       if (log.isDebugEnabled()) {
         log.debug("Checking to see if class " + externalName + " matches criteria [" + test + "]");
       }
 
+      // 加载指定的类
       Class<?> type = loader.loadClass(externalName);
+      // 通过matches方法检测条件是否满足
       if (test.matches(type)) {
+        // 将符合条件的类记录到matches集合中
         matches.add((Class<T>) type);
       }
     } catch (Throwable t) {

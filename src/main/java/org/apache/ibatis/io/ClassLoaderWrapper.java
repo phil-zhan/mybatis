@@ -19,17 +19,22 @@ import java.io.InputStream;
 import java.net.URL;
 
 /**
+ * 封装了5个类加载器,见getClassLoaders方法
+ *
  * A class to wrap access to multiple class loaders making them work as one
  *
  * @author Clinton Begin
  */
 public class ClassLoaderWrapper {
 
+  // 用用执行的默认类加载器
   ClassLoader defaultClassLoader;
+  // 系统类加载器
   ClassLoader systemClassLoader;
 
   ClassLoaderWrapper() {
     try {
+      // 初始化systemClassLoader字段
       systemClassLoader = ClassLoader.getSystemClassLoader();
     } catch (SecurityException ignored) {
       // AccessControlException on Google App Engine
@@ -102,6 +107,8 @@ public class ClassLoaderWrapper {
   }
 
   /**
+   * 用5个类加载器一个个查找资源，只要其中任何一个找到，就返回
+   *
    * Try to get a resource from a group of classloaders
    *
    * @param resource    - the resource to get
@@ -109,17 +116,21 @@ public class ClassLoaderWrapper {
    * @return the resource or null
    */
   InputStream getResourceAsStream(String resource, ClassLoader[] classLoader) {
+    // 遍历ClassLoader数组
     for (ClassLoader cl : classLoader) {
       if (null != cl) {
 
         // try to find the resource as passed
+        // 查找指定的来源
         InputStream returnValue = cl.getResourceAsStream(resource);
 
         // now, some class loaders want this leading "/", so we'll add it and try again if we didn't find the resource
+        // 尝试以“/”开头，再次查找
         if (null == returnValue) {
           returnValue = cl.getResourceAsStream("/" + resource);
         }
 
+        // 查找到指定的资源
         if (null != returnValue) {
           return returnValue;
         }
@@ -129,6 +140,8 @@ public class ClassLoaderWrapper {
   }
 
   /**
+   * 用5个类加载器一个个查找资源，只要其中任何一个找到，就返回
+   *
    * Get a resource as a URL using the current class path
    *
    * @param resource    - the resource to locate
@@ -168,6 +181,8 @@ public class ClassLoaderWrapper {
   }
 
   /**
+   * 用5个类加载器一个个调用Class.forName(加载类)，只要其中任何一个加载成功，就返回
+   *
    * Attempt to load a class from a group of classloaders
    *
    * @param name        - the class to load
@@ -197,12 +212,18 @@ public class ClassLoaderWrapper {
 
   }
 
+  // 返回ClassLoader数组，该数组指明了类加载器的使用顺序
   ClassLoader[] getClassLoaders(ClassLoader classLoader) {
     return new ClassLoader[]{
+      //参数指定的类加载器
         classLoader,
+      // 系统指定的默认类加载器
         defaultClassLoader,
+      // 当前线程绑定的类加载器
         Thread.currentThread().getContextClassLoader(),
+      // 加载当前类所使用的类加载器
         getClass().getClassLoader(),
+      // 系统类加载器
         systemClassLoader};
   }
 

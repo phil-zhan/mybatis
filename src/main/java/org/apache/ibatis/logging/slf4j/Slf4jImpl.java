@@ -22,11 +22,14 @@ import org.slf4j.Marker;
 import org.slf4j.spi.LocationAwareLogger;
 
 /**
+ * slf4j的logger
+ *
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
 public class Slf4jImpl implements Log {
 
+  //代理模式，委派给Slf4jLoggerImpl或者Slf4jLocationAwareLoggerImpl,所以这个类只是一个wrapper
   private Log log;
 
   public Slf4jImpl(String clazz) {

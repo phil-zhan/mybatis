@@ -24,6 +24,8 @@ import org.apache.ibatis.executor.result.ResultMapException;
 import org.apache.ibatis.session.Configuration;
 
 /**
+ * 类型处理器的基类
+ *
  * The base {@link TypeHandler} for references a generic type.
  * <p>
  * Important: Since 3.5.0, This class never call the {@link ResultSet#wasNull()} and
@@ -57,11 +59,14 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
 
   @Override
   public void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException {
+    //特殊情况，设置NULL
     if (parameter == null) {
       if (jdbcType == null) {
+        //如果没设置jdbcType，报错啦
         throw new TypeException("JDBC requires that the JdbcType must be specified for all nullable parameters.");
       }
       try {
+        // 绑定参数为null的处理
         ps.setNull(i, jdbcType.TYPE_CODE);
       } catch (SQLException e) {
         throw new TypeException("Error setting null for parameter #" + i + " with JdbcType " + jdbcType + " . "
@@ -70,6 +75,7 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
       }
     } else {
       try {
+        // 绑定非空参数，该方法抽象方法，由子类实现
         setNonNullParameter(ps, i, parameter, jdbcType);
       } catch (Exception e) {
         throw new TypeException("Error setting non null for parameter #" + i + " with JdbcType " + jdbcType + " . "
@@ -82,6 +88,7 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
   @Override
   public T getResult(ResultSet rs, String columnName) throws SQLException {
     try {
+      // 抽象方法，有多个重载，由子类实现
       return getNullableResult(rs, columnName);
     } catch (Exception e) {
       throw new ResultMapException("Error attempting to get column '" + columnName + "' from result set.  Cause: " + e, e);
@@ -106,15 +113,17 @@ public abstract class BaseTypeHandler<T> extends TypeReference<T> implements Typ
     }
   }
 
+  //非NULL情况，怎么设参数还得交给不同的子类完成
   public abstract void setNonNullParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException;
 
   /**
+   * 以下3个方法是取得可能为null的结果，具体交给子类完成
    * Gets the nullable result.
    *
    * @param rs
    *          the rs
    * @param columnName
-   *          Column name, when configuration <code>useColumnLabel</code> is <code>false</code>
+   *          Colunm name, when configuration <code>useColumnLabel</code> is <code>false</code>
    * @return the nullable result
    * @throws SQLException
    *           the SQL exception

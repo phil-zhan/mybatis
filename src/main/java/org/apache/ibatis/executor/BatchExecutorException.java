@@ -19,6 +19,8 @@ import java.sql.BatchUpdateException;
 import java.util.List;
 
 /**
+ * 批处理执行异常
+ *
  * This exception is thrown if a <code>java.sql.BatchUpdateException</code> is caught
  * during the execution of any nested batch.  The exception contains the
  * java.sql.BatchUpdateException that is the root cause, as well as

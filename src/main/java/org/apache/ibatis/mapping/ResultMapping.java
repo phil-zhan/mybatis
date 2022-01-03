@@ -26,29 +26,49 @@ import org.apache.ibatis.type.TypeHandler;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 
 /**
+ * 结果映射
+ * MyBatis 中最重要最强大的元素
+ *
  * @author Clinton Begin
  */
 public class ResultMapping {
 
+  // configuration对象
   private Configuration configuration;
+  // 对应节点的property属性
   private String property;
+  // 对应节点的column属性
   private String column;
+  // 对应节点的javaType属性，标识的是一个JavaBean的完全限定名，或一个类型别名
   private Class<?> javaType;
+  // 对应节点的jdbcType属性，表示进行映射的列的jdbc类型
   private JdbcType jdbcType;
+  // 对应节点的typeHandler属性，表示类型处理器，它会覆盖默认的类型处理器
   private TypeHandler<?> typeHandler;
+  // 对应节点的resultMap属性，该属性通过id引用了另一个resultMap节点定义，它负责将结果集中的一部分列映射成其他关联的结果对象，这样就可以通过join
+  // 的方式进行关联查询，然后直接映射成多个对象，并同时设置这些对象之间的组合关系
   private String nestedResultMapId;
+  // 对应节点的select属性，该属性通过id引用了另一个select节点定义，会把指定的列的值传入select属性指定的select语句中作为参数进行查询
   private String nestedQueryId;
+  // 对应节点的notNullColumn属性拆分后的结果
   private Set<String> notNullColumns;
+  // 对应节点的columnPrefix属性
   private String columnPrefix;
+  // 处理后的标志
   private List<ResultFlag> flags;
+  // 对应节点的column属性拆分后生成的结果，
   private List<ResultMapping> composites;
+  // 对应节点的resultSet属性
   private String resultSet;
+  // 对应节点的foreignColumn属性
   private String foreignColumn;
+  // 是否延迟加载，对应节点的fetchType属性
   private boolean lazy;
 
   ResultMapping() {
   }
 
+  //静态内部类，建造者模式
   public static class Builder {
     private ResultMapping resultMapping = new ResultMapping();
 
@@ -141,6 +161,7 @@ public class ResultMapping {
       return resultMapping;
     }
 
+    //一些验证逻辑,验证result map有没有写错
     private void validate() {
       // Issue #697: cannot define both nestedQueryId and nestedResultMapId
       if (resultMapping.nestedQueryId != null && resultMapping.nestedResultMapId != null) {

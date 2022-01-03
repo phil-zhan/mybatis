@@ -23,6 +23,10 @@ import java.util.StringJoiner;
 import org.apache.ibatis.reflection.ArrayUtil;
 
 /**
+ * 缓存key
+ * 一般缓存框架的数据结构基本上都是 Key-Value 方式存储，
+ * MyBatis 对于其 Key 的生成采取规则为：[mappedStementId + offset + limit + SQL + queryParams + environment]生成一个哈希码
+ *
  * @author Clinton Begin
  */
 public class CacheKey implements Cloneable, Serializable {
@@ -45,12 +49,17 @@ public class CacheKey implements Cloneable, Serializable {
   private static final int DEFAULT_MULTIPLIER = 37;
   private static final int DEFAULT_HASHCODE = 17;
 
+  // 参与计算hashcode
   private final int multiplier;
+  // CacheKey对象的hashcode
   private int hashcode;
+  // 检验和
   private long checksum;
+  // updateList集合的个数
   private int count;
   // 8/21/2017 - Sonarlint flags this as needing to be marked transient. While true if content is not serializable, this
   // is not always true and thus should not be marked transient.
+  // 由该集合中的所有对象共同决定两个CacheKey是否相同
   private List<Object> updateList;
 
   public CacheKey() {
@@ -60,6 +69,7 @@ public class CacheKey implements Cloneable, Serializable {
     this.updateList = new ArrayList<>();
   }
 
+  // 传入一个Object数组，更新hashcode和效验码
   public CacheKey(Object[] objects) {
     this();
     updateAll(objects);
@@ -70,6 +80,7 @@ public class CacheKey implements Cloneable, Serializable {
   }
 
   public void update(Object object) {
+    // 计算hash值，校验码
     int baseHashCode = object == null ? 1 : ArrayUtil.hashCode(object);
 
     count++;
@@ -78,6 +89,7 @@ public class CacheKey implements Cloneable, Serializable {
 
     hashcode = multiplier * hashcode + baseHashCode;
 
+    // 同时将对象加入列表，这样万一两个CacheKey的hash码碰巧一样，再根据对象严格equals来区分
     updateList.add(object);
   }
 

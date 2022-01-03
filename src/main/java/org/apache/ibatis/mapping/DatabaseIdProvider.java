@@ -21,6 +21,8 @@ import java.util.Properties;
 import javax.sql.DataSource;
 
 /**
+ * DB id 提供者
+ *
  * Should return an id to identify the type of this database.
  * That id can be used later on to build different queries for each database type
  * This mechanism enables supporting multiple vendors or versions
@@ -33,5 +35,6 @@ public interface DatabaseIdProvider {
     // NOP
   }
 
+  //根据数据源来得到一个DB id
   String getDatabaseId(DataSource dataSource) throws SQLException;
 }
