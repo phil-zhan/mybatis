@@ -31,7 +31,7 @@ public class MainTest02 {
     MyCalculator myCalculator = (MyCalculator)enhancer.create();
 
     // 通过代理对象调用目标方法
-    myCalculator.add(1,1);
+    int add = myCalculator.add(1, 1);
 
     System.out.println(myCalculator.getClass());
 

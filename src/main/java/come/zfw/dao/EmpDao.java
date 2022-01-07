@@ -1,6 +1,7 @@
 package come.zfw.dao;
 
 import come.zfw.bean.Emp;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -18,4 +19,8 @@ public interface EmpDao {
     int updateByPrimaryKey(Emp record);
 
     Emp findEmpByEmpno(int empNo);
+
+    List<Emp> selectAll();
+
+    Emp findEmpByEmpnoAndEname(@Param("empno") Integer empno, @Param("ename") String ename);
 }

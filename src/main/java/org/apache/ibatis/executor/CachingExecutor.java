@@ -34,6 +34,7 @@ import org.apache.ibatis.transaction.Transaction;
 
 /**
  * 二级缓存执行器
+ * 开启二级缓存的时候才会使用
  *
  * @author Clinton Begin
  * @author Eduardo Macarron
@@ -89,7 +90,7 @@ public class CachingExecutor implements Executor {
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
     // 获取BoundSql对象
     BoundSql boundSql = ms.getBoundSql(parameterObject);
-    // 创建CacheKey对象
+    // 创建CacheKey对象【存在的价值：当再次需要执行该语句的时候】
     CacheKey key = createCacheKey(ms, parameterObject, rowBounds, boundSql);
     return query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
   }

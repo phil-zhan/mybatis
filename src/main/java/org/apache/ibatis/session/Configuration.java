@@ -105,41 +105,78 @@ public class Configuration {
   //环境
   protected Environment environment;
 
-  //---------以下都是<settings>节点-------
+  // ------------------以下都是<settings>节点------------------ //
+  // 详见mybatis配置 https://mybatis.org/mybatis-3/zh/configuration.html //
+
+  // 是否允许在嵌套语句中使用分页（RowBounds）。如果允许使用则设置为 false。
   protected boolean safeRowBoundsEnabled;
+  // 是否允许在嵌套语句中使用结果处理器（ResultHandler）。如果允许使用则设置为 false。
   protected boolean safeResultHandlerEnabled = true;
+  // 是否开启驼峰命名自动映射，即从经典数据库列名 A_COLUMN 映射到经典 Java 属性名 aColumn。
   protected boolean mapUnderscoreToCamelCase;
+  //开启时，任一方法的调用都会加载该对象的所有延迟加载属性。 否则，每个延迟加载属性会按需加载
   protected boolean aggressiveLazyLoading;
+  // 是否允许单个语句返回多结果集（需要数据库驱动支持）。
   protected boolean multipleResultSetsEnabled = true;
+  // 允许 JDBC 支持自动生成主键，需要数据库驱动支持。如果设置为 true，将强制使用自动生成主键。尽管一些数据库驱动不支持此特性，但仍可正常工作（如 Derby）。
   protected boolean useGeneratedKeys;
+  // 使用列标签代替列名。实际表现依赖于数据库驱动，具体可参考数据库驱动的相关文档，或通过对比测试来观察。
   protected boolean useColumnLabel = true;
   //默认启用缓存
   protected boolean cacheEnabled = true;
+  // 指定当结果集中值为 null 的时候是否调用映射对象的 setter（map 对象时为 put）方法，
+  // 这在依赖于 Map.keySet() 或 null 值进行初始化时比较有用。注意基本类型（int、boolean 等）是不能设置成 null 的。
   protected boolean callSettersOnNulls;
+  // 允许使用方法签名中的名称作为语句参数名称。 为了使用该特性，你的项目必须采用 Java 8 编译，并且加上 -parameters 选项。（新增于 3.4.1）
   protected boolean useActualParamName = true;
+  // 当返回行的所有列都是空时，MyBatis默认返回 null。 当开启这个设置时，MyBatis会返回一个空实例。 请注意，它也适用于嵌套的结果集（如集合或关联）。（新增于 3.4.2）
   protected boolean returnInstanceForEmptyRow;
+  // 从SQL中删除多余的空格字符。请注意，这也会影响SQL中的文字字符串。 (新增于 3.5.5)
   protected boolean shrinkWhitespacesInSql;
-
+  // Specifies the default value of 'nullable' attribute on 'foreach' tag. (Since 3.5.9)
+  protected boolean nullableOnForEach;
+  // 指定 MyBatis 增加到日志名称的前缀。
   protected String logPrefix;
+  // 指定 MyBatis 所用日志的具体实现，未指定时将自动查找。
   protected Class<? extends Log> logImpl;
+  // 指定 VFS 的实现
   protected Class<? extends VFS> vfsImpl;
+  // Specifies an sql provider class that holds provider method (Since 3.5.6).
+  // This class apply to the type(or value) attribute on sql provider annotation(e.g. @SelectProvider),
+  // when these attribute was omitted.
   protected Class<?> defaultSqlProviderType;
+  // MyBatis 利用本地缓存机制（Local Cache）防止循环引用和加速重复的嵌套查询。
+  // 默认值为 SESSION，会缓存一个会话中执行的所有查询。 若设置值为 STATEMENT，本地缓存将仅用于执行语句，对相同 SqlSession 的不同查询将不会进行缓存。
   protected LocalCacheScope localCacheScope = LocalCacheScope.SESSION;
+  // 当没有为参数指定特定的 JDBC 类型时，空值的默认 JDBC 类型。 某些数据库驱动需要指定列的 JDBC 类型，多数情况直接用一般类型即可，比如 NULL、VARCHAR 或 OTHER。
   protected JdbcType jdbcTypeForNull = JdbcType.OTHER;
+  // 指定对象的哪些方法触发一次延迟加载。
   protected Set<String> lazyLoadTriggerMethods = new HashSet<>(Arrays.asList("equals", "clone", "hashCode", "toString"));
+  // 设置超时时间，它决定数据库驱动等待数据库响应的秒数。
   protected Integer defaultStatementTimeout;
+  // 为驱动的结果集获取数量（fetchSize）设置一个建议值。此参数只可以在查询设置中被覆盖。
   protected Integer defaultFetchSize;
+  // 指定语句默认的滚动策略。
   protected ResultSetType defaultResultSetType;
   //默认为简单执行器
   protected ExecutorType defaultExecutorType = ExecutorType.SIMPLE;
+  // 指定 MyBatis 应如何自动映射列到字段或属性。 NONE 表示关闭自动映射；PARTIAL 只会自动映射没有定义嵌套结果映射的字段。
+  // FULL 会自动映射任何复杂的结果集（无论是否嵌套）。
   protected AutoMappingBehavior autoMappingBehavior = AutoMappingBehavior.PARTIAL;
+  // 指定发现自动映射目标未知列（或未知属性类型）的行为。
   protected AutoMappingUnknownColumnBehavior autoMappingUnknownColumnBehavior = AutoMappingUnknownColumnBehavior.NONE;
-  //---------以上都是<settings>节点-------
+
+  // ------------------以上都是<settings>节点------------------ //
+
+
+
   protected Properties variables = new Properties();
   //对象工厂和对象包装器工厂
   protected ReflectorFactory reflectorFactory = new DefaultReflectorFactory();
   protected ObjectFactory objectFactory = new DefaultObjectFactory();
   protected ObjectWrapperFactory objectWrapperFactory = new DefaultObjectWrapperFactory();
+
+
 
   //默认禁用延迟加载
   protected boolean lazyLoadingEnabled = false;
@@ -154,15 +191,19 @@ public class Configuration {
    */
   protected Class<?> configurationFactory;
 
+
+  // 映射器注册器
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
+  // 拦截器链
   protected final InterceptorChain interceptorChain = new InterceptorChain();
-  //类型处理器注册机
+  //类型处理器注册机【事先准备类型转换器jdbc<-->java】
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry(this);
   //类型别名注册机
   protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
+  // 脚本语言注册器
   protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();
 
-  //映射的语句,存在Map里
+  //映射的语句,存在Map里。【key：是mapper里面的sql的Id】
   protected final Map<String, MappedStatement> mappedStatements = new StrictMap<MappedStatement>("Mapped Statements collection")
       .conflictMessageProducer((savedValue, targetValue) ->
           ". please check " + savedValue.getResource() + " and " + targetValue.getResource());
@@ -189,12 +230,17 @@ public class Configuration {
    */
   protected final Map<String, String> cacheRefMap = new HashMap<>();
 
+
+
+
   public Configuration(Environment environment) {
     this();
     this.environment = environment;
   }
 
   public Configuration() {
+
+    // 初始化一些别名
     typeAliasRegistry.registerAlias("JDBC", JdbcTransactionFactory.class);
     typeAliasRegistry.registerAlias("MANAGED", ManagedTransactionFactory.class);
 
@@ -224,6 +270,7 @@ public class Configuration {
     typeAliasRegistry.registerAlias("CGLIB", CglibProxyFactory.class);
     typeAliasRegistry.registerAlias("JAVASSIST", JavassistProxyFactory.class);
 
+    // 初始化默认脚本语言
     languageRegistry.setDefaultDriverClass(XMLLanguageDriver.class);
     languageRegistry.register(RawLanguageDriver.class);
   }
@@ -309,6 +356,28 @@ public class Configuration {
 
   public void setShrinkWhitespacesInSql(boolean shrinkWhitespacesInSql) {
     this.shrinkWhitespacesInSql = shrinkWhitespacesInSql;
+  }
+
+  /**
+   * Sets the default value of 'nullable' attribute on 'foreach' tag.
+   *
+   * @param nullableOnForEach If nullable, set to {@code true}
+   * @since 3.5.9
+   */
+  public void setNullableOnForEach(boolean nullableOnForEach) {
+    this.nullableOnForEach = nullableOnForEach;
+  }
+
+  /**
+   * Returns the default value of 'nullable' attribute on 'foreach' tag.
+   *
+   * <p>Default is {@code false}.
+   *
+   * @return If nullable, set to {@code true}
+   * @since 3.5.9
+   */
+  public boolean isNullableOnForEach() {
+    return nullableOnForEach;
   }
 
   public String getDatabaseId() {
@@ -702,6 +771,7 @@ public class Configuration {
     }
     // 根据配置决定是否开启二级缓存的功能
     if (cacheEnabled) {
+      // 在 executor 的外面包了一层，以便额外加一些属性来做缓存
       executor = new CachingExecutor(executor);
     }
     // 此处调用插件,通过插件可以改变Executor行为

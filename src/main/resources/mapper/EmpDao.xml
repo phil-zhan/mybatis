@@ -123,4 +123,12 @@
   <select id="findEmpByEmpno" resultType="come.zfw.bean.Emp">
     select * from emp where empno = ${empNo}
   </select>
+
+  <select id="selectAll" resultType="come.zfw.bean.Emp">
+    select * from emp
+  </select>
+
+  <select id="findEmpByEmpnoAndEname" resultType="come.zfw.bean.Emp">
+    select * from emp where empno = #{empno} and ename = #{ename}
+  </select>
 </mapper>

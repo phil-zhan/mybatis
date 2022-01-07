@@ -19,5 +19,14 @@ package org.apache.ibatis.mapping;
  * @author Clinton Begin
  */
 public enum StatementType {
-  STATEMENT, PREPARED, CALLABLE
+  // Statement对象是在executeUpdate或executeQuery方法时指定sql,此时将sql语句发送和执行。
+  STATEMENT,
+
+  // PrepareStatement对象是在创建时指定并发送sql，在executeUpdate或executeQuery方法时触发sql执行。
+  // 为了防止sql注入，都会选用这种状态
+  // PrepareStatement是一种预编译的Statement对象。
+  PREPARED,
+
+  // 一般用在存储过程
+  CALLABLE
 }

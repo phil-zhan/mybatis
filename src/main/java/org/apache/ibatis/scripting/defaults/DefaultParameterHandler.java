@@ -68,7 +68,7 @@ public class DefaultParameterHandler implements ParameterHandler {
   @Override
   public void setParameters(PreparedStatement ps) {
     ErrorContext.instance().activity("setting parameters").object(mappedStatement.getParameterMap().getId());
-    // 取出sql中的参数映射列表
+    // 取出sql中的参数映射列表【每个参数有对应的Java表达 ，也有对应的sql表达，在这里面做映射】
     List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
     // 检测parameterMappings集合是否为空
     if (parameterMappings != null) {

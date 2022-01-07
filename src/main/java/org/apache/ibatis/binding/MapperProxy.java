@@ -115,7 +115,12 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
             throw new RuntimeException(e);
           }
         } else {
-          // 如果调用的普通方法，则创建一个PlainMethodInvoker并放入缓存，其中MapperMethod保存对应接口方法的SQL以及入参和出参的数据类型等信息
+          // 如果调用的普通方法，则创建一个PlainMethodInvoker并放入缓存，
+          // 其中MapperMethod保存对应接口方法的SQL以及入参和出参的数据类型等信息【分布在两个内置属性中】
+
+          // 【在 MappedStatement 对象中】->【在configuration的一个map集合中】->【解析配置文件的时候初始化的】
+          // map集合的key为方法的全限定名 value为 MappedStatement【封装了SQL和接口相关的信息】
+          // 这里是取出来，解析、赋值和封装【找到适合当前方法的相关类型】
           return new PlainMethodInvoker(new MapperMethod(mapperInterface, method, sqlSession.getConfiguration()));
         }
       });

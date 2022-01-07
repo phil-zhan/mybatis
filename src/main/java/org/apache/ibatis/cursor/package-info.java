@@ -1,4 +1,6 @@
 /*
+ *    可以理解为指针，操作数据库的
+ *
  *    Copyright 2009-2021 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");

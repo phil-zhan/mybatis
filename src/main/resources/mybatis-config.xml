@@ -12,11 +12,11 @@
     <typeAliases>
         <package name="come.zfw.bean"/>
     </typeAliases>
-<!--  <plugins>-->
-<!--    <plugin interceptor="com.github.pagehelper.PageHelper">-->
-<!--      <property name="dialect" value="mysql"/>-->
-<!--    </plugin>-->
-<!--  </plugins>-->
+<!--  <plugins>
+    <plugin interceptor="com.github.pagehelper.PageHelper">
+      <property name="dialect" value="mysql"/>
+    </plugin>
+  </plugins>-->
     <environments default="development">
         <environment id="development">
             <transactionManager type="JDBC"/>

@@ -53,6 +53,7 @@ public class MapperMethod {
 
   public MapperMethod(Class<?> mapperInterface, Method method, Configuration config) {
     this.command = new SqlCommand(config, mapperInterface, method);
+    // method 不是方法，是一个内部类对象
     this.method = new MethodSignature(config, mapperInterface, method);
   }
 
@@ -351,9 +352,12 @@ public class MapperMethod {
       this.mapKey = getMapKey(method);
       this.returnsMap = this.mapKey != null;
       // 初始化rowBoundsIndex、resultHandlerIndex字段
+      // RowBounds 【用于分页的】【也就是传入的参数可以是 RowBounds】
       this.rowBoundsIndex = getUniqueParamIndex(method, RowBounds.class);
       this.resultHandlerIndex = getUniqueParamIndex(method, ResultHandler.class);
-      // 创建ParamNameResolver对象
+      // 创建ParamNameResolver对象【以避免参数名称变成 arg0 arg1...arg】
+      // 多个参数的时候，处理@Param注解。
+      // 为每一个参数封装一个参数解析器
       this.paramNameResolver = new ParamNameResolver(configuration, method);
     }
 

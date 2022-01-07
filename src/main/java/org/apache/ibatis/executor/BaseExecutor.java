@@ -72,8 +72,11 @@ public abstract class BaseExecutor implements Executor {
 
   protected BaseExecutor(Configuration configuration, Transaction transaction) {
     this.transaction = transaction;
+    // 延迟加载队列（线程安全）
     this.deferredLoads = new ConcurrentLinkedQueue<>();
+    // 一级缓存，用于缓存该Executor对象查询结果集映射得到的结果对象
     this.localCache = new PerpetualCache("LocalCache");//?
+    // 一级缓存，用于缓存输出类型的参数
     this.localOutputParameterCache = new PerpetualCache("LocalOutputParameterCache");
     this.closed = false;
     this.configuration = configuration;

@@ -134,12 +134,13 @@ public class ParamNameResolver {
    */
   public Object getNamedParams(Object[] args) {
     final int paramCount = names.size();
-    // 五参数，返回null
+    // 无参数，返回null
     if (args == null || paramCount == 0) {
       // 如果没参数
       return null;
-      // 未使用@Param且只有一个参数
+
     } else if (!hasParamAnnotation && paramCount == 1) {
+      // 未使用@Param且只有一个参数
       // 如果只有一个参数
       Object value = args[names.firstKey()];
       return wrapToMapIfCollection(value, useActualParamName ? names.get(0) : null);

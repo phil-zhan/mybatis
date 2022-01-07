@@ -27,4 +27,9 @@ public class Emp implements Serializable {
     private Integer deptno;
 
     private static final long serialVersionUID = 1L;
+
+    public Emp(Integer empno, String ename) {
+        this.empno = empno;
+        this.ename = ename;
+    }
 }

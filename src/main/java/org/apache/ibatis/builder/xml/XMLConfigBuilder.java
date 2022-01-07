@@ -98,6 +98,8 @@ public class XMLConfigBuilder extends BaseBuilder {
     ErrorContext.instance().resource("SQL Mapper Configuration");
     // 将Properties全部设置到configuration里面去
     this.configuration.setVariables(props);
+
+    // 当前配置文件是否被解析过
     this.parsed = false;
     this.environment = environment;
     this.parser = parser;
@@ -121,29 +123,42 @@ public class XMLConfigBuilder extends BaseBuilder {
       // issue #117 read properties first
       // 解析properties
       propertiesElement(root.evalNode("properties"));
+
       // 解析settings
       Properties settings = settingsAsProperties(root.evalNode("settings"));
-      // 设置vfsImpl字段
+
+      // 设置vfsImpl字段【vfs：虚拟文件系统】
       loadCustomVfs(settings);
       loadCustomLogImpl(settings);
+
       // 解析类型别名
       typeAliasesElement(root.evalNode("typeAliases"));
+
       // 解析插件
       pluginElement(root.evalNode("plugins"));
-      // 对象工厂
+
+      // 对象工厂【可以指定对象的常见工厂】【默认使用的是对象的无参构造方法】
       objectFactoryElement(root.evalNode("objectFactory"));
+
       // 对象包装工厂
       objectWrapperFactoryElement(root.evalNode("objectWrapperFactory"));
+
       // 反射工厂
       reflectorFactoryElement(root.evalNode("reflectorFactory"));
-      settingsElement(settings);//设置具体的属性到configuration对象
+
+      // 设置具体的属性到configuration对象【将上面解析到的settings赋值给configuration对象】
+      settingsElement(settings);
+
       // read it after objectFactory and objectWrapperFactory issue #631
       // 环境
       environmentsElement(root.evalNode("environments"));
+
       // databaseIdProvider
       databaseIdProviderElement(root.evalNode("databaseIdProvider"));
+
       // 类型处理器
       typeHandlerElement(root.evalNode("typeHandlers"));
+
       // 映射器
       mapperElement(root.evalNode("mappers"));
     } catch (Exception e) {
@@ -406,6 +421,9 @@ public class XMLConfigBuilder extends BaseBuilder {
           TransactionFactory txFactory = transactionManagerElement(child.evalNode("transactionManager"));
           // 创建DataSourceFactory和DataSource
           DataSourceFactory dsFactory = dataSourceElement(child.evalNode("dataSource"));
+
+          // 这里只是对数据库连接的一些属性进行封装。不会真正的进行数据库连接
+          // 数据库连接是在进行SQL之前才进行的
           DataSource dataSource = dsFactory.getDataSource();
           // 创建Environment
           Environment.Builder environmentBuilder = new Environment.Builder(id)
