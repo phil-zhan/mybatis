@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="come.zfw.dao.EmpDao">
-  <resultMap id="BaseResultMap" type="come.zfw.bean.Emp">
+<mapper namespace="com.zfw.dao.EmpDao">
+  <resultMap id="BaseResultMap" type="com.zfw.bean.Emp">
     <id column="EMPNO" jdbcType="INTEGER" property="empno" />
     <result column="ENAME" jdbcType="VARCHAR" property="ename" />
     <result column="JOB" jdbcType="VARCHAR" property="job" />
@@ -24,7 +24,7 @@
     delete from emp
     where EMPNO = #{empno,jdbcType=INTEGER}
   </delete>
-  <insert id="insert" keyColumn="EMPNO" keyProperty="empno" parameterType="come.zfw.bean.Emp" useGeneratedKeys="true">
+  <insert id="insert" keyColumn="EMPNO" keyProperty="empno" parameterType="com.zfw.bean.Emp" useGeneratedKeys="true">
     insert into emp (ENAME, JOB, MGR, 
       HIREDATE, SAL, COMM, DEPTNO
       )
@@ -32,7 +32,7 @@
       #{hiredate,jdbcType=DATE}, #{sal,jdbcType=INTEGER}, #{comm,jdbcType=INTEGER}, #{deptno,jdbcType=INTEGER}
       )
   </insert>
-  <insert id="insertSelective" keyColumn="EMPNO" keyProperty="empno" parameterType="come.zfw.bean.Emp" useGeneratedKeys="true">
+  <insert id="insertSelective" keyColumn="EMPNO" keyProperty="empno" parameterType="com.zfw.bean.Emp" useGeneratedKeys="true">
     insert into emp
     <trim prefix="(" suffix=")" suffixOverrides=",">
       <if test="ename != null">
@@ -81,7 +81,7 @@
       </if>
     </trim>
   </insert>
-  <update id="updateByPrimaryKeySelective" parameterType="come.zfw.bean.Emp">
+  <update id="updateByPrimaryKeySelective" parameterType="com.zfw.bean.Emp">
     update emp
     <set>
       <if test="ename != null">
@@ -108,7 +108,7 @@
     </set>
     where EMPNO = #{empno,jdbcType=INTEGER}
   </update>
-  <update id="updateByPrimaryKey" parameterType="come.zfw.bean.Emp">
+  <update id="updateByPrimaryKey" parameterType="com.zfw.bean.Emp">
     update emp
     set ENAME = #{ename,jdbcType=VARCHAR},
       JOB = #{job,jdbcType=VARCHAR},
@@ -120,15 +120,15 @@
     where EMPNO = #{empno,jdbcType=INTEGER}
   </update>
 
-  <select id="findEmpByEmpno" resultType="come.zfw.bean.Emp">
+  <select id="findEmpByEmpno" resultType="com.zfw.bean.Emp">
     select * from emp where empno = ${empNo}
   </select>
 
-  <select id="selectAll" resultType="come.zfw.bean.Emp">
+  <select id="selectAll" resultType="com.zfw.bean.Emp">
     select * from emp
   </select>
 
-  <select id="findEmpByEmpnoAndEname" resultType="come.zfw.bean.Emp">
+  <select id="findEmpByEmpnoAndEname" resultType="com.zfw.bean.Emp">
     select * from emp where empno = #{empno} and ename = #{ename}
   </select>
 </mapper>
